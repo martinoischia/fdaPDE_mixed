@@ -16,11 +16,16 @@ class  FPCAData{
 	
 		std::vector<Point> locations_;
 
-	
+		//barycenter information
+		MatrixXr barycenters_; //barycenter information
+		VectorXi element_ids_; //elements id information
+		bool locations_by_barycenter_;
+
 		//Design matrix
 		MatrixXr datamatrix_;
 		
 		UInt order_;
+		UInt search_;
 		
 		//Areal data
 		MatrixXi incidenceMatrix_;
@@ -49,6 +54,7 @@ class  FPCAData{
 		#ifdef R_VERSION_
 		void setDatamatrix(SEXP Rdatamatrix);
 		void setLocations(SEXP Rlocations);
+		void setBaryLocations(SEXP RbaryLocations);
 		void setNrealizations(SEXP Rnrealizations);
 		void setIncidenceMatrix(SEXP RincidenceMatrix);
 		#endif
@@ -60,6 +66,8 @@ class  FPCAData{
 			It initializes the object storing the R given objects. This is the simplest of the two possible interfaces with R
 			\param Rdatamatrix an R-matrix containing the datamatrix.
 			
+			\param Rsearch an R-integer to decide the search algorithm type (tree or naive or walking search algorithm).
+
 			\param Rlocations an R-matrix containing the location of the observations.
 			
 			\param Rorder an R-integer containing the order of the approximating basis.
@@ -81,13 +89,13 @@ class  FPCAData{
 		FPCAData(){};
 
 		#ifdef R_VERSION_
-		explicit FPCAData(SEXP Rlocations, SEXP Rdatamatrix, SEXP Rorder, SEXP RincidenceMatrix,
-		SEXP Rlambda, SEXP RnPC, SEXP RnFolds, SEXP RGCVmethod, SEXP Rnrealizations);
+		explicit FPCAData(SEXP Rlocations, SEXP RbaryLocations, SEXP Rdatamatrix, SEXP Rorder, SEXP RincidenceMatrix,
+		SEXP Rlambda, SEXP RnPC, SEXP RnFolds, SEXP RGCVmethod, SEXP Rnrealizations, SEXP Rsearch);
 		#endif
 
 				
 		explicit FPCAData(std::vector<Point>& locations, MatrixXr& datamatrix,
-		UInt order, MatrixXi& incidenceMatrix, std::vector<Real> lambda, UInt nPC, UInt nFolds);
+		UInt order, MatrixXi& incidenceMatrix, std::vector<Real> lambda, UInt nPC, UInt nFolds, UInt search);
 
 
 		void printDatamatrix(std::ostream & out) const;
@@ -122,7 +130,9 @@ class  FPCAData{
 		inline std::vector<Real> const & getLambda() const {return lambda_;}
 		//! A method returning the input order
 		inline UInt const getOrder() const {return order_;}
-		//! A method returning the input order
+		//! A method returning the input search
+		inline UInt const getSearch() const {return search_;}
+		//! A method returning the input nFolds
 		inline UInt const getNFolds() const {return nFolds_;}
 		//! A method returning the method that should be used to compute the GCV:
 		//! 1: exact calculation
@@ -130,6 +140,12 @@ class  FPCAData{
 		inline UInt const & getGCVmethod() const {return GCVmethod_;}
 		//! A method returning the number of vectors to use to stochastically estimate the edf
 		inline UInt const & getNrealizations() const {return nrealizations_;}
+		inline MatrixXr const & getBarycenters() const {return barycenters_;}
+		inline VectorXi const & getElementIds() const {return element_ids_;}
+		inline Real const & getBarycenter(int i, int j) const {return barycenters_(i,j);}
+		inline UInt const & getElementId(Id i) const {return element_ids_(i);}
+
+		inline bool isLocationsByBarycenter() const {return locations_by_barycenter_;}
 		
 		
 };

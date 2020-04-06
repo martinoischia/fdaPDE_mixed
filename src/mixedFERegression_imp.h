@@ -68,7 +68,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 	UInt nlocations = regressionData_.isSpaceTime() ? regressionData_.getNumberofSpaceObservations() : regressionData_.getNumberofObservations();
 
 	psi_.resize(nlocations, nnodes);
-	if (regressionData_.isLocationsByNodes()) //pointwise data
+	if (regressionData_.isLocationsByNodes() & !regressionData_.isLocationsByBarycenter()) //pointwise data
 	{
 		std::vector<coeff> tripletAll;
 		if(!regressionData_.isSpaceTime())
@@ -89,17 +89,16 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 		psi_.setFromTriplets(tripletAll.begin(),tripletAll.end());
 		psi_.makeCompressed();
 	}
-	else if (regressionData_.getNumberOfRegions() == 0)
+	else if (regressionData_.isLocationsByBarycenter() & regressionData_.getNumberOfRegions() == 0) //pointwise data
 	{
 		constexpr UInt Nodes = mydim==2 ? 3*ORDER : 6*ORDER-2;
 		Element<Nodes, mydim, ndim> tri_activated;
-		Eigen::Matrix<Real,Nodes,1> coefficients;
-
 		Real evaluator;
 
 		for(UInt i=0; i<nlocations;i++)
 		{
-			tri_activated = mesh_.findLocationNaive(regressionData_.getLocations()[i]);
+			tri_activated = mesh_.getElement(regressionData_.getElementId(i));
+
 			if(tri_activated.getId() == Identifier::NVAL)
 			{
 				#ifdef R_VERSION_
@@ -107,17 +106,54 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 				#else
 				std::cout << "ERROR: Point " << i+1 <<" is not in the domain\n";
 				#endif
-			}else
+			}else //tri_activated.getId() found
+			{ 
+				for(UInt node = 0; node < Nodes ; ++node)
+				{
+					evaluator = regressionData_.getBarycenter(i,node);
+					psi_.insert(i, tri_activated[node].getId()) = evaluator;
+				}
+			}
+		} //end of for loop
+		psi_.makeCompressed();
+	}
+	else if (!regressionData_.isLocationsByBarycenter() & regressionData_.getNumberOfRegions() == 0)
+	{
+		constexpr UInt Nodes = mydim==2 ? 3*ORDER : 6*ORDER-2;
+		Element<Nodes, mydim, ndim> tri_activated;
+		Eigen::Matrix<Real,Nodes,1> coefficients;
+
+		Real evaluator;
+		this->barycenters_.resize(nlocations, Nodes);
+		this->element_ids_.resize(nlocations);
+		for(UInt i=0; i<nlocations;i++)
+		{
+			if (regressionData_.getSearch() == 1) { //use Naive search
+				tri_activated = mesh_.findLocationNaive(regressionData_.getLocations()[i]); 
+			} else if (regressionData_.getSearch() == 2) { //use Tree search (default)
+				tri_activated = mesh_.findLocationTree(regressionData_.getLocations()[i]);
+			}
+			
+			if(tri_activated.getId() == Identifier::NVAL)
 			{
+				#ifdef R_VERSION_
+				Rprintf("ERROR: Point %d is not in the domain, remove point and re-perform smoothing\n", i+1);
+				#else
+				std::cout << "ERROR: Point " << i+1 <<" is not in the domain\n";
+				#endif
+			}else //tri_activated.getId() found
+			{ 
+				element_ids_(i)=tri_activated.getId();
 				for(UInt node = 0; node < Nodes ; ++node)
 				{
 					coefficients = Eigen::Matrix<Real,Nodes,1>::Zero();
 					coefficients(node) = 1; //Activates only current base
 					evaluator = evaluate_point<Nodes,mydim,ndim>(tri_activated, regressionData_.getLocations()[i], coefficients);
+					barycenters_(i,node)=evaluator;
 					psi_.insert(i, tri_activated[node].getId()) = evaluator;
 				}
 			}
-		}
+		} //end of for loop
 		psi_.makeCompressed();
 	}
 	else //areal data

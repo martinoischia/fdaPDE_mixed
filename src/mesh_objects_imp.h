@@ -1,6 +1,6 @@
-//#include "mesh_objects.hpp"
-#ifndef __MESH_OBJECTS_IMP_HPP__
-#define __MESH_OBJECTS_IMP_HPP__
+//#include "mesh_objects.h"
+#ifndef __MESH_OBJECTS_IMP_H__
+#define __MESH_OBJECTS_IMP_H__
 
 
 template <UInt NNODES>
@@ -103,10 +103,10 @@ int Element<NNODES,2,2>::getPointDirection(const Point& point) const
 template <UInt NNODES>
 void Element<NNODES,2,2>::print(std::ostream & out) const
 {
-	out<<"Triangle -"<< id_ <<"- ";
+	out<<"Triangle Id -"<< id_ <<"- " <<"< ";
 	for (UInt i=0; i<NNODES; ++i)
 		out<<points_[i].getId()<<"  ";
-	out<<std::endl;
+	out << ">" << std::endl;
 }
 
 
@@ -239,9 +239,7 @@ bool Element<NNODES,2,3>::isPointInside(const Point& point) const
 {
 	Real eps = 2.2204e-016;
 	Real tolerance = 10 * eps;
-
-//THIS COMMENT IS FROM BERAHA, COSMO First: check consistency trough Rouchè-Capelli theorem 
-
+	//THIS COMMENT IS FROM BERAHA, COSMO First: check consistency trough Rouchè-Capelli theorem 
 	Element<NNODES,2,3> t=*this;
 
 	Eigen::Matrix<Real,3,2> A;
@@ -261,16 +259,15 @@ bool Element<NNODES,2,3>::isPointInside(const Point& point) const
 	b(2) = point[2]-t[0][2];
 
 	sol = A.colPivHouseholderQr().solve(b);
-	
 	err = A*sol-b;
 	
 	//Real tolerance = (A(0,0)*A(0,0) + A(1,0)*A(1,0) + A(2,0)*A(2,0) + A(0,1)*A(0,1) + A(1,1)*A(1,1) + A(2,1)*A(2,1))/4;
 
 	if( (err(0)*err(0)<tolerance) && (err(1)*err(1)<tolerance) && (err(2)*err(2)<tolerance) ){
 		return((sol(0)+sol(1)<=1+2*eps) && (sol(0)>=0-eps) && (sol(1)>=0-eps));
-	}else{
-
-		return 0;}
+	} else {
+		return 0;
+	}
 }
 
 
@@ -278,7 +275,6 @@ bool Element<NNODES,2,3>::isPointInside(const Point& point) const
 template <UInt NNODES>
 int Triangle<NNODES,2,3>::getPointDirection(const Point& point) const
 {
-
 	//da implementare
 	std::cerr<<"ancora da implementare";
 }
@@ -287,10 +283,10 @@ int Triangle<NNODES,2,3>::getPointDirection(const Point& point) const
 template <UInt NNODES>
 void Element<NNODES,2,3>::print(std::ostream & out) const
 {
-	out<<"Triangle -"<< id_ <<"- ";
+	out<<"Triangle Id -"<< id_ <<"- " <<"< ";
 	for (UInt i=0; i<NNODES; ++i)
 		out<<points_[i].getId()<<"  ";
-	out<<std::endl;
+	out << ">" << std::endl;
 }
 
 
@@ -454,10 +450,10 @@ bool Element<NNODES,3,3>::isPointInside(const Point& point) const
 template <UInt NNODES>
 void Element<NNODES,3,3>::print(std::ostream & out) const
 {
-	out<<"Tetrahedron -"<< id_ <<"- ";
+	out<<"Tetrahedron Id -"<< id_ <<"- "<<"< ";
 	for (UInt i=0; i<NNODES; ++i)
 		out<<points_[i].getId()<<"  ";
-	out<<std::endl;
+	out << ">" << std::endl;
 }
 
 

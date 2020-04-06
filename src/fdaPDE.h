@@ -16,6 +16,8 @@
 //#include <iomanip>
 #include <limits>
 #include <vector>
+#include <stack>
+#include <set>
 
 // For debugging purposes
 //#include <Eigen/StdVector>

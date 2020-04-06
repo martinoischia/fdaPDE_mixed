@@ -55,6 +55,9 @@ class MixedFERegressionBase
 	MatrixXr U_;	//! psi^T * W or psi^T * A * W padded with zeros, needed for Woodbury decomposition
 	MatrixXr V_;   //! W^T*psi, if pointwise data is U^T, needed for Woodbury decomposition
 
+	MatrixXr barycenters_; //barycenter information
+	VectorXi element_ids_; //elements id information
+
 	Eigen::SparseLU<SpMat> matrixNoCovdec_; // Stores the factorization of matrixNoCov_
 	Eigen::PartialPivLU<MatrixXr> Gdec_;	// Stores factorization of G =  C + [V * matrixNoCov^-1 * U]
 	Eigen::PartialPivLU<MatrixXr> WTW_;	// Stores the factorization of W^T * W
@@ -123,6 +126,10 @@ class MixedFERegressionBase
 	template<typename A>
 	void apply(EOExpr<A> oper,const ForcingTerm & u);
 
+	//! A function returning the computed barycenters of the locationss
+	inline MatrixXr const & getBarycenters() const{return barycenters_;};
+	//! A function returning the element ids of the locations
+	inline VectorXi const & getElementIds() const{return element_ids_;};
 	//! A inline member that returns a VectorXr, returns the whole solution_.
 	inline MatrixXv const & getSolution() const{return _solution;}
 	//! A function returning the computed dofs of the model

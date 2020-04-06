@@ -42,7 +42,7 @@
 #' FEMbasis = create.FEM.basis(mesh)
 #' @export
 
-create.FEM.basis = function(mesh)
+create.FEM.basis = function(mesh, saveTree = FALSE)
 {
   if(class(mesh)!='mesh.2D' & class(mesh)!='mesh.2.5D' & class(mesh)!='mesh.3D')
     stop("Unknown mesh class")
@@ -61,12 +61,102 @@ create.FEM.basis = function(mesh)
 	  #  eleProp = R_elementProperties(mesh)
 	  #}
 
+  if (saveTree == TRUE) {
+      ## Call C++ function
+      orig_mesh = mesh
+      mesh$triangles = mesh$triangles - 1
+      mesh$edges = mesh$edges - 1
+      mesh$neighbors[mesh$neighbors != -1] = mesh$neighbors[mesh$neighbors != -1] - 1
+      myDim = 2
+      nDim = 2
+
+      storage.mode(mesh$nodes) <- "double"
+      storage.mode(mesh$triangles) <- "integer"
+      storage.mode(mesh$edges) <- "integer"
+      storage.mode(mesh$neighbors) <- "integer"
+      storage.mode(mesh$order) <- "integer"
+      storage.mode(myDim) <- "integer"
+      storage.mode(nDim) <- "integer"
+
+      bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, package = "fdaPDE")
+      tree_mesh = list(
+      treelev = bigsol[[1]][1],
+      header_orig= bigsol[[2]], 
+      header_scale = bigsol[[3]],
+      node_id = bigsol[[4]][,1],
+      node_left_child = bigsol[[4]][,2],
+      node_right_child = bigsol[[4]][,3],
+      node_box= bigsol[[5]])
+
+      # Reconstruct FEMbasis with tree mesh
+      mesh.class= class(orig_mesh)
+      mesh = append(orig_mesh, tree_mesh)
+      class(mesh) = mesh.class
+  }
+      
   FEMbasis = list(mesh = mesh, order = as.integer(mesh$order), nbasis = nbasis, detJ=eleProp$detJ, transf_coord = eleProp$transf_coord)
   class(FEMbasis) = "FEMbasis"
 
   FEMbasis
   } else if (class(mesh) == "mesh.2.5D" || class(mesh) == "mesh.3D"){
+      if (saveTree == TRUE) {
 
+        if (class(mesh) == "mesh.2.5D") {
+          orig_mesh = mesh
+
+          myDim = 2
+          nDim = 3
+          # C++ function for manifold works with vectors not with matrices
+          mesh$triangles=c(t(mesh$triangles))
+          mesh$nodes=c(t(mesh$nodes))
+          # Indexes in C++ starts from 0, in R from 1, opportune transformation
+          mesh$triangles=mesh$triangles-1
+
+          storage.mode(mesh$order) <- "integer"
+          storage.mode(mesh$nnodes) <- "integer"
+          storage.mode(mesh$ntriangles) <- "integer"
+          storage.mode(mesh$nodes) <- "double"
+          storage.mode(mesh$triangles) <- "integer"
+          storage.mode(myDim) <- "integer"
+          storage.mode(nDim) <- "integer"
+
+        } else if (class(mesh) == "mesh.3D") {
+          orig_mesh = mesh
+
+          myDim = 3
+          nDim = 3
+          # C++ function for volumetric works with vectors not with matrices
+          mesh$tetrahedrons=c(t(mesh$tetrahedrons))
+          mesh$nodes=c(t(mesh$nodes))
+          # Indexes in C++ starts from 0, in R from 1, opportune transformation
+          mesh$tetrahedrons=mesh$tetrahedrons-1
+
+          storage.mode(mesh$order) <- "integer"
+          storage.mode(mesh$nnodes) <- "integer"
+          storage.mode(mesh$ntetrahedrons) <- "integer"
+          storage.mode(mesh$nodes) <- "double"
+          storage.mode(mesh$tetrahedrons) <- "integer"
+          storage.mode(myDim) <- "integer"
+          storage.mode(nDim) <- "integer"
+        }
+
+
+        bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, package = "fdaPDE")
+        tree_mesh = list(
+        treelev = bigsol[[1]][1],
+        header_orig= bigsol[[2]], 
+        header_scale = bigsol[[3]],
+        node_id = bigsol[[4]][,1],
+        node_left_child = bigsol[[4]][,2],
+        node_right_child = bigsol[[4]][,3],
+        node_box= bigsol[[5]])
+
+        # Reconstruct FEMbasis with tree mesh
+        mesh.class= class(orig_mesh)
+        mesh = append(orig_mesh, tree_mesh)
+        class(mesh) = mesh.class
+      }
+    
   	  FEMbasis = list(mesh = mesh, order = as.integer(mesh$order),nbasis = mesh$nnodes)
   	  class(FEMbasis) = "FEMbasis"
   	  FEMbasis

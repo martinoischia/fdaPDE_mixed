@@ -1,4 +1,4 @@
-checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, PDE_parameters=NULL,GCVmethod = 2,nrealizations = 100)
+checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, PDE_parameters=NULL, GCVmethod = 2, nrealizations = 100, search, bary.locations=bary.locations)
 {
   #################### Parameter Check #########################
 
@@ -60,6 +60,22 @@ checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lam
       stop("'c' required in PDE_parameters;  is NULL.")
   }
 
+   #Check the locations in 'bary.locations' and 'locations' are the same
+  if(!is.null(bary.locations) & !is.null(locations))
+  {
+    flag=TRUE
+    for (i in 1:nrow(locations)) {
+      if (!(locations[i,1]==bary.locations$locations[i,1] & locations[i,2] == bary.locations$locations[i,2])) {
+        flag = FALSE
+        break
+      }
+    }
+
+    if (flag == FALSE) {
+      stop("Locations are not same as the one in barycenter information.")
+    }
+  }  # end of bary.locations
+
   space_varying=FALSE
 
   if(!is.null(PDE_parameters$u)){
@@ -94,6 +110,16 @@ checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lam
 
   ans=space_varying
 
+  # # print the type of the search algorithm
+  # if(!is.null(locations))
+  # {
+  #   if (search == 1) { #use Naive search
+  #     print('This is Naive Search')
+  #   } else if (search == 2)  { #use Tree search (default)
+  #     print('This is Tree Search')
+  #   }
+  # }
+
   ans
 }
 
@@ -120,9 +146,8 @@ checkSmoothingParametersSize<-function(locations = NULL, observations, FEMbasis,
       stop("'locations' must be a ndim-columns matrix;")
     if(nrow(locations) != nrow(observations))
       stop("'locations' and 'observations' have incompatible size;")
-    if(dim(locations)[1]==dim(FEMbasis$mesh$nodes)[1] & dim(locations)[2]==dim(FEMbasis$mesh$nodes)[2])
-      warning("The locations matrix has the same dimensions as the mesh nodes. If the locations you are using are the
-              mesh nodes, set locations=NULL instead")
+     if(dim(locations)[1]==dim(FEMbasis$mesh$nodes)[1] & dim(locations)[2]==dim(FEMbasis$mesh$nodes)[2] & !(sum(abs(locations[,1]))==sum(abs(FEMbasis$mesh$nodes[,1])) & sum(abs(locations[,2]))==sum(abs(FEMbasis$mesh$nodes[,2]))) )
+      warning("The locations matrix has the same dimensions as the mesh nodes. If the locations you are using are the mesh nodes, set locations=NULL instead")
   }
   if(ncol(lambda) != 1)
     stop("'lambda' must be a column vector")

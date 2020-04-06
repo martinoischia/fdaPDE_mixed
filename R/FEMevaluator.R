@@ -45,12 +45,18 @@
 #' eval.FEM(FEMfunction, incidence_matrix = incidence_matrix)
 #' @export
 
-eval.FEM <- function(FEM, locations=NULL, incidence_matrix = NULL)
+eval.FEM <- function(FEM, locations = NULL, incidence_matrix = NULL, search = "tree", bary.locations=NULL)
 {
+  ##################### Checking parameters, sizes and conversion ################################
   if (is.null(FEM))
     stop("FEM required;  is NULL.")
   if(class(FEM) != "FEM")
     stop("'FEM' is not of class 'FEM'")
+#if locations is null but bary.locations is not null, use the locations in bary.locations
+  if(is.null(locations) & !is.null(bary.locations)) {
+    locations = bary.locations$locations
+    locations = as.matrix(locations)
+  }
   if (is.null(locations) && is.null(incidence_matrix))
     stop("'locations' NOR 'incidence_matrix' required;  both are NULL.")
   if (!is.null(locations) && !is.null(incidence_matrix))
@@ -61,26 +67,61 @@ eval.FEM <- function(FEM, locations=NULL, incidence_matrix = NULL)
     warning("The locations matrix has the same dimensions as the mesh nodes. If you want to get the FEM object evaluation
             at the mesh nodes, use FEM$coeff instead")
 
+  if(search == "naive" || search == 1)
+    search=1
+  else if(search == "tree" || search == 2)
+    search=2
+  else if(search == "walking" || search == 3)
+    search=3
+
+  if(class(FEM$FEMbasis$mesh)=='mesh.2.5D' & search ==3){
+  stop("2.5D search must be either tree or naive.")
+  }
+
+  if(class(FEM$FEMbasis$mesh)=='mesh.3D' & search ==3){
+  stop("3D search must be either tree or naive.")
+  }
+
+  if (search != 1 & search != 2 & search != 3)
+    stop("search must be either tree or naive or walking.")
+
+  #Check the locations in 'bary.locations' and 'locations' are the same
+  if(!is.null(bary.locations) & !is.null(locations))
+  {
+    flag=TRUE
+    for (i in 1:nrow(locations)) {
+      if (!(locations[i,1]==bary.locations$locations[i,1] & locations[i,2] == bary.locations$locations[i,2])) {
+        flag = FALSE
+        break
+      }
+    }
+    if (flag == FALSE) {
+      stop("Locations are not same as the one in barycenter information.")
+    }
+  }  # end of bary.locations  
+
   if (is.null(locations))
     locations <- matrix(nrow = 0, ncol = 2)
   else
     incidence_matrix <- matrix(nrow = 0, ncol = 1)
 
+
+  ################## End checking parameters, sizes and conversion #############################
   res <- NULL
 
   if(class(FEM$FEMbasis$mesh)=='mesh.2D'){
     ndim = 2
     mydim = 2
-    res = CPP_eval.FEM(FEM, locations, incidence_matrix, TRUE, ndim, mydim)
+    res = CPP_eval.FEM(FEM, locations, incidence_matrix, TRUE, ndim, mydim, search, bary.locations) 
 
   }else if(class(FEM$FEMbasis$mesh)=='mesh.2.5D'){
     ndim = 3
     mydim = 2
-    res = CPP_eval.manifold.FEM(FEM, locations, incidence_matrix, TRUE, ndim, mydim)
+    res = CPP_eval.manifold.FEM(FEM, locations, incidence_matrix, TRUE, ndim, mydim, search, bary.locations)
   }else if(class(FEM$FEMbasis$mesh)=='mesh.3D'){
     ndim = 3
     mydim = 3
-    res = CPP_eval.volume.FEM(FEM, locations, incidence_matrix, TRUE, ndim, mydim)
+    res = CPP_eval.volume.FEM(FEM, locations, incidence_matrix, TRUE, ndim, mydim, search, bary.locations)
   }
 
   return(as.matrix(res))
