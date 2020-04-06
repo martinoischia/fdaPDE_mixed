@@ -1,4 +1,4 @@
-checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, PDE_parameters=NULL,GCVmethod = 2,nrealizations = 100)
+checkSmoothingParameters_time<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE,GCVmethod = 2,nrealizations = 100, DOF=NULL, DOF_matrix=NULL)
 {
   #################### Parameter Check #########################
 
@@ -20,14 +20,21 @@ checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lam
   {
     if(any(is.na(locations)))
       stop("Missing values not admitted in 'locations'.")
-    if(any(is.na(observations)))
-      stop("Missing values not admitted in 'observations' when 'locations' are specified.")
   }
+
+  if (is.null(time_locations) && is.null(time_mesh))
+    stop("at least one between 'time_locations' and 'time_mesh' is required;  both NULL")
+
+  if (any(is.na(time_mesh)))
+    stop("Missing values not admitted in 'time_mesh'")
 
   if (is.null(observations))
     stop("observations required;  is NULL.")
 
-  if (is.null(lambda))
+  if (is.null(lambdaS))
+    stop("lambda required;  is NULL.")
+
+  if (is.null(lambdaT))
     stop("lambda required;  is NULL.")
 
   if (!is.null(locations) && !is.null(incidence_matrix))
@@ -49,6 +56,15 @@ checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lam
   if(!is.logical(GCV))
     stop("'GCV' is not logical")
 
+  if (is.null(FLAG_MASS))
+    stop("FLAG_MASS required;  is NULL.")
+  if(!is.logical(FLAG_MASS))
+    stop("'FLAG_MASS' is not logical")
+
+  if (is.null(FLAG_PARABOLIC))
+    stop("FLAG_PARABOLIC required;  is NULL.")
+  if(!is.logical(FLAG_PARABOLIC))
+    stop("'FLAG_PARABOLIC' is not logical")
 
   if(!is.null(PDE_parameters))
   {
@@ -97,40 +113,117 @@ checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lam
   ans
 }
 
-checkSmoothingParametersSize<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, DOF=FALSE, DOF_matrix=NULL, space_varying=FALSE, PDE_parameters = NULL, ndim, mydim)
+checkSmoothingParametersSize_time<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, DOF=FALSE, DOF_matrix=NULL, space_varying, ndim, mydim)
 {
   #################### Parameter Check #########################
-  if(ncol(observations) != 1)
-    stop("'observations' must be a column vector")
+  if(ncol(observations) < 1)
+    stop("'observations' must contain at least one element")
   if(nrow(observations) < 1)
     stop("'observations' must contain at least one element")
-  if(is.null(locations))
+  # if(is.null(locations))
+  # {
+  #   if(class(FEMbasis$mesh) == "mesh.2D")
+  #   {
+  #     if(nrow(observations) > nrow(FEMbasis$mesh$nodes))
+  #       stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
+  #   }else if(class(FEMbasis$mesh) == "mesh.2.5D" || class(FEMbasis$mesh) == "mesh.3D")
+  #   {
+  #     if(nrow(observations) > FEMbasis$mesh$nnodes)
+  #       stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
+  #   }
+  # }
+
+  if(!is.null(time_locations))
+    if(ncol(time_locations) != 1)
+      stop("'time_locations' must be a column vector")
+
+  if(!is.null(time_mesh))
+    if(ncol(time_mesh) != 1)
+      stop("'time_locations' must be a column vector")
+
+  if(!is.null(time_mesh) && length(time_mesh)==1)
+      stop("'time_mesh' must be of length bigger than 1. For only space problems use smooth.FEM")
+
+  if(!is.null(time_locations) && length(time_locations)==1)
+      stop("'time_locations' must be of length bigger than 1. For only space problems use smooth.FEM")
+
+
+  if(is.null(locations) && is.null(incidence_matrix))
   {
-    if(class(FEMbasis$mesh) == "mesh.2D"){
-      if(nrow(observations) > nrow(FEMbasis$mesh$nodes))
-        stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
-    }else if(class(FEMbasis$mesh) == "mesh.2.5D" || class(FEMbasis$mesh) == "mesh.3D"){
-      if(nrow(observations) > FEMbasis$mesh$nnodes)
-        stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
+    if(!is.null(time_locations))
+      if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || ncol(observations) != nrow(time_locations))
+        stop("'locations' and 'observations' have incompatible size;")
+
+    if(is.null(time_locations))
+    {
+      if(FLAG_PARABOLIC && !is.null(IC))
+      {
+        if(ifelse(class(FEMbasis$mesh) == "mesh.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || (nrow(time_mesh)-1) != ncol(observations))
+          stop("'locations' and 'observations' have incompatible size;")
+      }
+      else
+      {
+        if(ifelse(class(FEMbasis$mesh) == "mesh.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || nrow(time_mesh) != ncol(observations))
+          stop("'locations' and 'observations' have incompatible size;")
+      }
     }
   }
+
   if(!is.null(locations))
   {
     if(ncol(locations) != ndim)
       stop("'locations' must be a ndim-columns matrix;")
-    if(nrow(locations) != nrow(observations))
-      stop("'locations' and 'observations' have incompatible size;")
+
+    if(!is.null(time_locations) && is.null(incidence_matrix))
+    {
+      if(nrow(locations) != nrow(observations))
+        stop("'locations' and 'observations' have incompatible size;")
+
+      if(nrow(time_locations) != ncol(observations))
+        stop("'time_locations' and 'observations' have incompatible size;")
+    }
+    if(is.null(time_locations) && is.null(incidence_matrix))
+    {
+      if(FLAG_PARABOLIC)
+      {
+        if(nrow(locations) != nrow(observations))
+          stop("'locations' and 'observations' have incompatible size;")
+        if(!is.null(IC))
+          if((nrow(time_mesh)-1) != ncol(observations))
+            stop("'time_mesh' and 'observations' have incompatible size;")
+      }
+      if(!FLAG_PARABOLIC)
+      {
+        if(nrow(locations) != nrow(observations))
+          stop("'locations' and 'observations' have incompatible size;")
+
+        if(nrow(time_mesh) != ncol(observations))
+          stop("'time_mesh' and 'observations' have incompatible size;")
+      }
+    }
     if(dim(locations)[1]==dim(FEMbasis$mesh$nodes)[1] & dim(locations)[2]==dim(FEMbasis$mesh$nodes)[2])
       warning("The locations matrix has the same dimensions as the mesh nodes. If the locations you are using are the
               mesh nodes, set locations=NULL instead")
   }
-  if(ncol(lambda) != 1)
-    stop("'lambda' must be a column vector")
-  if(nrow(lambda) < 1)
-    stop("'lambda' must contain at least one element")
+
+
+  if(ncol(lambdaS) != 1)
+    stop("'lambdaS' must be a column vector")
+  if(nrow(lambdaS) < 1)
+    stop("'lambdaS' must contain at least one element")
+
+  if(ncol(lambdaT) != 1)
+    stop("'lambdaT' must be a column vector")
+  if(nrow(lambdaT) < 1)
+    stop("'lambdaT' must contain at least one element")
+
+  if(nrow(lambdaS)+nrow(lambdaT)>2 && !GCV)
+    warning("different values of lambdaS or lambdaT have been passed but GCV=FALSE,
+              if you want to compute the GCV please set GCV=TRUE")
+
   if(!is.null(covariates))
   {
-    if(nrow(covariates) != nrow(observations))
+    if(nrow(covariates) != nrow(observations)*ncol(observations))
       stop("'covariates' and 'observations' have incompatible size;")
   }
 
@@ -152,15 +245,37 @@ checkSmoothingParametersSize<-function(locations = NULL, observations, FEMbasis,
       stop("'BC_indices' must be a column vector")
     if(ncol(BC$BC_values) != 1)
       stop("'BC_values' must be a column vector")
+    if(nrow(BC$BC_indices)>ifelse(class(FEMbasis$mesh)=='mesh.2D',nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes))
+      stop("'BC_indices' longer than the mesh")
     if(nrow(BC$BC_indices) != nrow(BC$BC_values))
       stop("'BC_indices' and 'BC_values' have incompatible size;")
-    if(class(FEMbasis$mesh) == "mesh.2D"){
-      if(sum(BC$BC_indices>nrow(nrow(FEMbasis$mesh$nodes))) > 0)
-        stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh;")
-    }else if((class(FEMbasis$mesh) == "mesh.2.5D" || class(FEMbasis$mesh) == "mesh.3D")){
-      if(sum(BC$BC_indices>FEMbasis$mesh$nnodes) > 0)
-        stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh;")
+
+    N=ifelse(class(FEMbasis$mesh) == "mesh.2D",nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)
+    #M=ifelse(FLAG_PARABOLIC==TRUE,length(time_mesh)-1,length(time_mesh)+2)
+    if(any(BC$BC_indices)<0)
+      stop("'BC_indices' elements must be non negative")
+    if(any(BC$BC_indices)>ifelse(class(FEMbasis$mesh)=='mesh.2D',nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes))
+      stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh")
+  }
+
+  if (FLAG_PARABOLIC==TRUE && is.null(IC))
+  {
+    if (!is.null(time_mesh))
+    {
+      if(ncol(observations)!=nrow(time_mesh))
+        stop("IC is required for parabolic smoothing")
+      else
+        message("IC is required for parabolic smoothing, will be estimated from the first column of 'observations'")
     }
+    else
+      message("IC is required for parabolic smoothing, will be estimated from the first column of 'observations'")
+  }
+  if(!is.null(IC))
+  {
+    if(ncol(IC) != 1)
+      stop("'IC' must be a column vector")
+    if(length(IC) != FEMbasis$nbasis)
+      stop("'IC' must be a vector of length 'FEMbasis$nbasis'")
   }
 
   if(!is.null(PDE_parameters) & space_varying==FALSE)
@@ -209,10 +324,10 @@ checkSmoothingParametersSize<-function(locations = NULL, observations, FEMbasis,
   {
     if(GCV==FALSE)
       warning("GCV=FALSE. DOF_matrix is passed but GCV is not computed")
-    if(ncol(DOF_matrix)!=1)
-      stop("'DOF_matrix' must be a column vector")
     if(nrow(DOF_matrix)!=length(lambdaS))
       stop("The number of rows of DOF_matrix is different from the number of lambdaS")
+    if(ncol(DOF_matrix)!=length(lambdaT))
+      stop("The number of columns of DOF_matrix is different from the number of lambdaT")
   }
 
 }
