@@ -79,8 +79,8 @@
 #' ## Plot the functional loadings of the estimated Principal Components                           
 #' plot(FPCA_solution$loadings.FEM)
 
-FPCA.FEM<-function(locations = NULL, datamatrix, FEMbasis,lambda, nPC = 1, validation = NULL, NFolds = 5, 
-                   GCVmethod = "Stochastic", nrealizations = 100)
+FPCA.FEM<-function(locations = NULL, bary.locations = NULL, datamatrix, FEMbasis, lambda, nPC = 1, validation = NULL, NFolds = 5, 
+                   GCVmethod = "Stochastic", nrealizations = 100, search = "tree")
 {
   incidence_matrix=NULL # if areal fpca will be included in release, this should be put in the input
   
@@ -104,9 +104,18 @@ FPCA.FEM<-function(locations = NULL, datamatrix, FEMbasis,lambda, nPC = 1, valid
   else{
     stop("GCVmethod must be either Stochastic or Exact")
   }
+
+  if(search=="naive")
+    search=1
+  else if(search=="tree")
+    search=2
+  else{
+    stop("search must be either tree or naive.")
+  }
+
 ##################### Checking parameters, sizes and conversion ################################
 
-  checkSmoothingParametersFPCA(locations, datamatrix, FEMbasis, incidence_matrix, lambda, nPC, validation, NFolds, GCVmethod ,nrealizations) 
+  checkSmoothingParametersFPCA(locations=locations, datamatrix=datamatrix, FEMbasis=FEMbasis, incidence_matrix=incidence_matrix, lambda=lambda, nPC=nPC, validation=validation, NFolds=NFolds, GCVmethod=GCVmethod ,nrealizations=nrealizations,search=search) 
   ## Coverting to format for internal usage
   if(!is.null(locations))
     locations = as.matrix(locations)
@@ -115,28 +124,25 @@ FPCA.FEM<-function(locations = NULL, datamatrix, FEMbasis,lambda, nPC = 1, valid
 	incidence_matrix = as.matrix(incidence_matrix)
   lambda = as.matrix(lambda)
   
-  checkSmoothingParametersSizeFPCA(locations, datamatrix, FEMbasis, incidence_matrix, lambda, ndim, mydim, validation, NFolds)
+  checkSmoothingParametersSizeFPCA(locations=locations, datamatrix=datamatrix, FEMbasis=FEMbasis, incidence_matrix=incidence_matrix, lambda=lambda, ndim=ndim, mydim=mydim, validation=validation, NFolds=NFolds)
   
 	  ################## End checking parameters, sizes and conversion #############################
   
   bigsol = NULL
   if(class(FEMbasis$mesh) == 'mesh.2D'){
 	  print('C++ Code Execution')
-	  bigsol = CPP_smooth.FEM.FPCA(locations, datamatrix, FEMbasis, incidence_matrix,
-	  								lambda, ndim, mydim, nPC, validation, NFolds, 
-									GCVmethod, nrealizations)
+	  bigsol = CPP_smooth.FEM.FPCA(locations=locations, bary.locations=bary.locations, datamatrix=datamatrix, FEMbasis=FEMbasis, incidence_matrix=incidence_matrix,
+	  								             lambda=lambda, ndim=ndim, mydim=mydim, nPC=nPC, validation=validation, NFolds=NFolds, GCVmethod=GCVmethod, nrealizations=nrealizations, search=search)
 	  numnodes = nrow(FEMbasis$mesh$nodes)
   } else if(class(FEMbasis$mesh) == 'mesh.2.5D'){
 	  print('C++ Code Execution')
-	  bigsol = CPP_smooth.manifold.FEM.FPCA(locations, datamatrix, FEMbasis,
-	  										incidence_matrix, lambda, ndim, mydim,
-											nPC, validation, NFolds, GCVmethod, nrealizations)
+	  bigsol = CPP_smooth.manifold.FEM.FPCA(locations=locations, bary.locations=bary.locations, datamatrix=datamatrix, FEMbasis=FEMbasis, incidence_matrix=incidence_matrix, 
+                                          lambda=lambda, ndim=ndim, mydim=mydim, nPC=nPC, validation=validation, NFolds=NFolds, GCVmethod=GCVmethod, nrealizations=nrealizations, search=search)
 	  numnodes = FEMbasis$mesh$nnodes
   } else if(class(FEMbasis$mesh) == 'mesh.3D'){
 	  print('C++ Code Execution')
-	  bigsol = CPP_smooth.volume.FEM.FPCA(locations, datamatrix, FEMbasis,
-	  										incidence_matrix, lambda, ndim, mydim,
-											nPC, validation, NFolds, GCVmethod, nrealizations)
+	  bigsol = CPP_smooth.volume.FEM.FPCA(locations=locations, bary.locations=bary.locations, datamatrix=datamatrix, FEMbasis=FEMbasis, incidence_matrix=incidence_matrix, 
+                                      lambda=lambda, ndim=ndim, mydim=mydim, nPC=nPC, validation=validation, NFolds=NFolds, GCVmethod=GCVmethod, nrealizations=nrealizations, search=search)
 	  numnodes = FEMbasis$mesh$nnodes
   }
   
@@ -144,15 +150,45 @@ FPCA.FEM<-function(locations = NULL, datamatrix, FEMbasis,lambda, nPC = 1, valid
   loadings.FEM=FEM(loadings,FEMbasis)
   
   scores=bigsol[[2]]
-  
   lambda=bigsol[[3]]
-  
   variance_explained=bigsol[[4]]
-  
   cumsum_percentage=bigsol[[5]]
-  
   var=bigsol[[6]]
+
+  # Save information of Tree Mesh
+  tree_mesh = list(
+    treeloc = bigsol[[7]][1],
+    treelev = bigsol[[7]][2],
+    ndimp = bigsol[[7]][3],
+    ndimt = bigsol[[7]][4],
+    nele = bigsol[[7]][5],
+    iava = bigsol[[7]][6],
+    iend =bigsol[[7]][7],
+    header_orig= bigsol[[8]], 
+    header_scale = bigsol[[9]],
+    node_id = bigsol[[10]][,1],
+    node_left_child = bigsol[[10]][,2],
+    node_right_child = bigsol[[10]][,3],
+    node_box= bigsol[[11]])
+
+  if (class(FEMbasis) != "treeFEMbasis") {
+    treeFEMbasis = FEMbasis
+    treeFEMbasis$mesh = append(FEMbasis$mesh, tree_mesh)
+    class(treeFEMbasis$mesh) = class(FEMbasis$mesh)
+    class(treeFEMbasis) = "treeFEMbasis"
+  }
+
+  # Save information of Barycenter
+  bary.locations = list(barycenters = bigsol[[12]], element_ids = bigsol[[13]])
+  class(bary.locations) = "bary.locations"
   
-  reslist=list(loadings.FEM=loadings.FEM, scores=scores, lambda=lambda, variance_explained=variance_explained, cumsum_percentage=cumsum_percentage)
+  if (class(FEMbasis) != "treeFEMbasis") {
+    reslist=list(loadings.FEM=loadings.FEM, treeFEMbasis = treeFEMbasis, bary.locations = bary.locations, 
+    scores=scores, lambda=lambda, variance_explained=variance_explained, cumsum_percentage=cumsum_percentage)
+    } else { #already exists treeFEMbasis
+      reslist=list(loadings.FEM=loadings.FEM, bary.locations = bary.locations, 
+    scores=scores, lambda=lambda, variance_explained=variance_explained, cumsum_percentage=cumsum_percentage)
+  }
+  
   return(reslist)
 }

@@ -42,6 +42,7 @@ class Evaluator<ORDER,2,2>
 		will be stored
 		*/
 		void eval(Real* X, Real *Y, UInt length, const Real *coef, bool redundancy, Real* result, std::vector<bool>& isinside);
+		void evalWithInfo(Real* X, Real *Y, UInt length, const Real *coef, bool redundancy, Real* result, std::vector<bool>& isinside, const std::vector<UInt> & element_id, Real **barycenters);
 
 		//! A member that computes the integral over regions divided by the measure of the region in a mesh,
 		//  given the bases' coefficients.
@@ -82,6 +83,7 @@ class Evaluator<ORDER,2,3>
 		will be stored
 		*/
 		void eval(Real* X, Real *Y, Real *Z, UInt length, const Real *coef, bool redundancy, Real* result, std::vector<bool>& isinside);
+		void evalWithInfo(Real* X, Real *Y, Real *Z, UInt length, const Real *coef, bool redundancy, Real* result, std::vector<bool>& isinside, const std::vector<UInt> & element_id, Real **barycenters);
 		
 		//! A member that computes the integral over regions divided by the measure of the region in a mesh,
 		//  given the bases' coefficients.
@@ -125,7 +127,7 @@ class Evaluator<ORDER,3,3>
 		will be stored
 		*/
 		void eval(Real* X, Real *Y, Real *Z, UInt length, const Real *coef, bool redundancy, Real* result, std::vector<bool>& isinside);
-		
+		void evalWithInfo(Real* X, Real *Y, Real *Z, UInt length, const Real *coef, bool redundancy, Real* result, std::vector<bool>& isinside, const std::vector<UInt> & element_id, Real **barycenters);
 		//! A member that computes the integral over regions divided by the measure of the region in a mesh,
 		//  given the bases' coefficients.
 		/*!

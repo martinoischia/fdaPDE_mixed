@@ -26,6 +26,9 @@ protected:
 	
 	//!A Eigen::SparseMatrix<Real> containing the basis function.
 	//SpMat psi_;
+	
+	MatrixXr barycenters_; //barycenter information
+	VectorXi element_ids_; //elements id information
 
 	bool isRcomputed_;
 	MatrixXr R_; //R1 ^T * R0^-1 * R1
@@ -114,6 +117,10 @@ public:
 	inline std::vector<Real> const & getCumulativePercentage() const {return cumsum_percentage_;}
 	//! A method returning the vector of the variance of the stochastic computation of the edf.
 	inline std::vector<Real> const & getVar() const{return var_;};
+	//! A function returning the computed barycenters of the locationss
+	inline MatrixXr const & getBarycenters() const{return barycenters_;};
+	//! A function returning the element ids of the locations
+	inline VectorXi const & getElementIds() const{return element_ids_;};
 };
 
 

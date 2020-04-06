@@ -1,4 +1,4 @@
-checkSmoothingParametersFPCA<-function(locations = NULL, datamatrix, FEMbasis, incidence_matrix = NULL, lambda, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100)
+checkSmoothingParametersFPCA<-function(locations = NULL, datamatrix, FEMbasis, incidence_matrix = NULL, lambda, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100, search)
 {
   #################### Parameter Check #########################
   if(!is.null(locations))
@@ -7,12 +7,19 @@ checkSmoothingParametersFPCA<-function(locations = NULL, datamatrix, FEMbasis, i
       stop("Missing values not admitted in 'locations'.")
     if(any(is.na(datamatrix)))
       stop("Missing values not admitted in 'datamatrix' when 'locations' are specified.")
-  }
+
+    # if (search == 1) { #use Naive search
+    #   print('This is Naive Search')
+    # } else if (search == 2)  { #use Tree search (default)
+    #   print('This is Tree Search')
+    # }
+  } # end of locations
+
   if (is.null(datamatrix)) 
     stop("observations required;  is NULL.")
   if (is.null(FEMbasis)) 
     stop("FEMbasis required;  is NULL.")
-  if(class(FEMbasis)!= "FEMbasis")
+  if(class(FEMbasis)!= "FEMbasis" && class(FEMbasis)!= "treeFEMbasis")
     stop("'FEMbasis' is not class 'FEMbasis'")
   
   if (!is.null(locations) && !is.null(incidence_matrix))

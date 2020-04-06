@@ -419,6 +419,40 @@ create.mesh.2.5D<- function(nodes, triangles, order = 1)
   return(out)
 }
 
+points.projection.2.5D<-function(mesh, locations) {
+  if(class(mesh) !="mesh.2.5D")
+  stop("Data projection is only available for 2.5D mesh ")
+
+  if (mesh$order == 2)
+    stop("Data projection is only available for order 1 ")
+
+  # C++ function for 2.5D works with vectors not with matrices
+  mesh$triangles=c(t(mesh$triangles))
+  mesh$nodes=c(t(mesh$nodes))
+  
+  # Indexes in C++ starts from 0, in R from 1, opportune transformation
+  mesh$triangles=mesh$triangles-1
+  
+  # Imposing types, this is necessary for correct reading from C++
+  ## Set proper type for correct C++ reading
+  locations <- as.matrix(locations)
+  storage.mode(locations) <- "double"
+  storage.mode(mesh$nnodes) <- "integer"
+  storage.mode(mesh$ntriangles) <- "integer"
+  storage.mode(mesh$nodes) <- "double"
+  storage.mode(mesh$triangles) <- "integer"
+  storage.mode(mesh$order) <- "integer"
+
+  ## Call C++ function
+  evalmat <- .Call("points_projection", mesh, locations, package = "fdaPDE")
+  
+  #Returning the evaluation matrix
+  return(evalmat)
+
+
+}
+
+
 second.order.mesh.2.5D<-function(nodes, triangles){
   
   toll=1e-5

@@ -1,5 +1,5 @@
-#ifndef __MESH_OBJECTS_HPP__
-#define __MESH_OBJECTS_HPP__
+#ifndef __MESH_OBJECTS_H__
+#define __MESH_OBJECTS_H__
 
 
 #include "fdaPDE.h"
@@ -38,10 +38,13 @@ public:
 //!  This class implements a 3D point, the default is z=0 => 2D point
 class Point: public Identifier{
 public:
-
-	UInt ndim;
-
-	Point(): Identifier(NVAL, NVAL){coord_.resize(3);};
+	UInt ndim; //ndim is the dimension of the space in which the object is embedded
+	static const UInt myDim=3;  //mydim is the dimension of the object
+	//set as default 3
+   //myDim setting is used when calling T::dp() as template (used in domain_imp.h)
+	
+	Point(): Identifier(NVAL, NVAL){coord_.resize(3);
+			ndim=3;}
    	Point(Real x, Real y):Identifier(NVAL, NVAL)
 		{coord_.resize(3);coord_[0]=x; coord_[1]=y; coord_[2]=0;
 			ndim=2;}
@@ -56,9 +59,16 @@ public:
 			ndim=3;}
 	void print(std::ostream & out) const;
 	Real operator[](UInt i) const {return coord_[i];}
+	// Returns the number of physical space dimension.
+	inline static int dp() { return myDim; }
+	// Returns the number of dimensions used for the search (equal to physical space dimension).
+	inline static int dt() { return myDim; }
+	/// Returns the size of coordinate array.
+	inline static int coordsize() { return myDim; }
+
 private:
 	std::vector<Real> coord_;
-	//std::array<Real, 2> coord_;
+							  
 };
 
 
@@ -110,9 +120,9 @@ class Element : public Identifier {
  *  The first three nodes represent the vertices, the others the internal nodes,
  *  following this enumeration: !IMPORTANT! different from Sangalli code!
  *
- * 		        3
- * 			    *
- * 		     /    \
+ * 		       3
+ * 			   *
+ * 		     /   \
  * 		  5 *	   * 4
  * 		  /	        \
  * 		 *_____*_____*
@@ -124,7 +134,8 @@ public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     static const UInt numVertices=3;
     static const UInt numSides=3;
-	static const UInt myDim=2;
+	static const UInt myDim=2; //mydim is the dimension of the object
+	static const UInt nDim=2; //ndim is the dimension of the space in which the object is embedded
 
     //! This constructor creates an "empty" Element, with an Id Not Valid
 	Element():Identifier(NVAL){points_.resize(NNODES);}
@@ -133,6 +144,19 @@ public:
     Element(Id id, const std::vector<Point>& points) : Identifier(id),points_(points)
 	{ this->computeProperties(); }
 
+	//! This constructor creates an Element, given its a std::vector that will define the Element.
+	// It's necessary for communicate with ADTree structure
+    Element(const std::vector<Real> & points) : Identifier(NVAL) {
+    //need to reconstruct vector<Real> points to vector<Point> points_
+    std::vector<Point> tmp;
+	tmp.resize(NNODES);
+	tmp[0]=(Point(points[0],points[1]));
+	tmp[1]=(Point(points[2],points[3]));
+	tmp[2]=(Point(points[4],points[5]));
+	points_ = tmp;
+	this->computeProperties();
+	}
+
 	//! Overloading of the operator [],  taking the Node number and returning a node as Point object.
     /*!
      * For node numbering convention see:
@@ -140,6 +164,16 @@ public:
       \return the Point object
     */
 	Point operator[](UInt i) const {return points_[i];}
+
+	// Returns the number of physical space dimension.
+	inline static constexpr int dp() { return nDim; }
+	
+	// Returns the number of dimensions used for the search (2*2)
+	inline static constexpr int dt() { return nDim*2; }
+
+	// Returns the size of coordinate array. (3*2)
+	inline static constexpr int coordsize() { return numVertices*nDim; }
+
 
 	//! A member that computes the barycentric coordinates.
     /*!
@@ -212,9 +246,9 @@ const int Element<NNODES,2,2>::myDim;
  *  The first three nodes represent the vertices, the others the internal nodes,
  *  following this enumeration: !IMPORTANT! different from Sangalli code!
  *
- * 			    3
- * 			    *
- * 		     /    \
+ * 			   3
+ * 			   *
+ * 		     /   \
  * 		  5 *	   * 4
  * 		  /	        \
  * 		 *_____*_____*
@@ -228,7 +262,8 @@ public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     static const UInt numVertices=3;
     static const UInt numSides=3;
-	static const UInt myDim=2;
+	static const UInt myDim=2; //mydim is the dimension of the object
+	static const UInt nDim=3; //ndim is the dimension of the space in which the object is embedded
 
     //! This constructor creates an "empty" Element, with an Id Not Valid
 	Element():Identifier(NVAL){points_.resize(NNODES);}
@@ -237,6 +272,18 @@ public:
     Element(Id id, const std::vector<Point> points) : Identifier(id),points_(points)
 	{ this->computeProperties(); }
 
+	//! This constructor creates an Element, given its a std::vector that will define the Element, it's necessary for communicate with ADTree structure
+    Element(const std::vector<Real> & points) : Identifier(NVAL) {
+    //need to reconstruct vector<Real> points to vector<Point> points_
+    std::vector<Point> tmp;
+	tmp.resize(NNODES);
+	tmp[0]=(Point(points[0],points[1],points[2]));
+	tmp[1]=(Point(points[3],points[4],points[5]));
+	tmp[2]=(Point(points[6],points[7],points[8]));
+	points_ = tmp;
+	this->computeProperties();
+	}
+
 	//! Overloading of the operator [],  taking the Node number and returning a node as Point object.
     /*!
      * For node numbering convention see:
@@ -244,6 +291,15 @@ public:
       \return the Point object
     */
 	Point operator[](UInt i) const {return points_[i];}
+
+	// Returns the number of physical space dimension.
+	inline static constexpr int dp() { return nDim; }
+	
+	// Returns the number of dimensions used for the search (3*2)
+	inline static constexpr int dt() { return nDim*2; }
+
+	// Returns the size of coordinate array. (3*3)
+	inline static constexpr int coordsize() { return numVertices*nDim; }
 
 	//! A member that computes the barycentric coordinates.
     /*!
@@ -284,15 +340,18 @@ private:
 
 //fine implementazione triangolo 3d
 
-//!  This class implements a Tetrahedron as an objects composed by four or ten nodes, embedded in a 3-dimensional space. Currently, only the 4 nodes version is implemented. The tetrahedron is an Element with mydim=3 and ndim=3
+//!  This class implements a Tetrahedron as an objects composed by four or ten nodes, embedded in a 3-dimensional space. 
+// Currently, only the 4 nodes version is implemented. 
+// The tetrahedron is an Element with mydim=3 and ndim=3
 
 template <UInt NNODES>
 class Element<NNODES,3,3> : public Identifier {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     static const UInt numVertices=4;
-    static const UInt numSides=3;
-    static const UInt myDim=3;
+    static const UInt numSides=3; //to be validated
+    static const UInt myDim=3; //mydim is the dimension of the object
+	static const UInt nDim=3; //ndim is the dimension of the space in which the object is embedded
 
     //! This constructor creates an "empty" Tetrahedron, with an Id Not Valid
 	Element():Identifier(NVAL){points_.resize(NNODES);}
@@ -301,6 +360,19 @@ public:
     Element(Id id, const std::vector<Point> points) : Identifier(id),points_(points)
 	{ this->computeProperties(); }
 
+	//! This constructor creates an Element, given its a std::vector that will define the Element, it's necessary for communicate with ADTree structure
+    Element(const std::vector<Real> & points) : Identifier(NVAL) {
+    //need to reconstruct vector<Real> points to vector<Point> points_
+    std::vector<Point> tmp;
+	tmp.resize(NNODES);
+	tmp[0]=(Point(points[0],points[1],points[2]));
+	tmp[1]=(Point(points[3],points[4],points[5]));
+	tmp[2]=(Point(points[6],points[7],points[8]));
+	tmp[3]=(Point(points[9],points[10],points[11]));
+	points_ = tmp;
+	this->computeProperties();
+	}	
+
 	//! Overloading of the operator [],  taking the Node number and returning a node as Point object.
     /*!
      * For node numbering convention see:
@@ -308,6 +380,15 @@ public:
       \return the Point object
     */
 	Point operator[](UInt i) const {return points_[i];}
+
+	// Returns the number of physical space dimension.
+	inline static constexpr int dp() { return nDim; }
+	
+	// Returns the number of dimensions used for the search (3*2)
+	inline static constexpr int dt() { return nDim*2; }
+
+	// Returns the size of coordinate array. (4*3)
+	inline static constexpr int coordsize() { return numVertices*nDim; }
 
 	//! A member that computes the barycentric coordinates.
     /*!
@@ -320,8 +401,10 @@ public:
 	const Eigen::Matrix<Real,3,3>& getM_invJ() const {return M_invJ_;}
 	const Eigen::Matrix<Real,3,3>& getMetric() const {return metric_;} //inv(MJ^t*MJ)
 	Real getVolume() const{return Volume_;};
+	//Real getArea() const {return (std::sqrt(detJ_)); //sqrt(det(MJ^t*MJ))
+				//};
 
-	Eigen::Matrix<Real,4,1> getBaryCoordinates(const Point& point) const; 
+	Eigen::Matrix<Real,4,1> getBaryCoordinates(const Point& point) const; //! DA VEDERE
 
 	//! A member that tests if a Point is located inside an Element.
     /*!
@@ -392,6 +475,7 @@ inline Real evaluate_point<6,2,2>(const Element<6,2,2>& t, const Point& point, c
  (observe that, if the point is inside the triangle, gamma=0)
  then the solution u(p) = u(p0) + alpa*(u(p1) - u(p0) + beta*(u(p2)-u(p0))
  */
+
 template <>
 inline Real evaluate_point<3,2,3>(const Element<3,2,3>& t, const Point& point, const Eigen::Matrix<Real,3,1>& coefficients)
 {
