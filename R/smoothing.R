@@ -367,8 +367,8 @@ smooth.FEM<-function(locations = NULL, observations, FEMbasis, lambda,
 
     bigsol = NULL
     print('C++ Code Execution')
-    if(!is.null(locations))
-      stop("The option locations!=NULL for manifold domains is currently not implemented")
+    # if(!is.null(locations))
+    #   stop("The option locations!=NULL for manifold domains is currently not implemented")
     bigsol = CPP_smooth.manifold.FEM.basis(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda, 
                                           covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim, 
                                           BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)

@@ -82,7 +82,7 @@ CPP_smooth.volume.FEM.basis<-function(locations, bary.locations, observations, F
   return(bigsol)
 }
 
-CPP_eval.manifold.FEM = function(FEM, locations, incidence_matrix, redundancy, ndim, mydim, search, bary.locations)
+CPP_eval.volume.FEM = function(FEM, locations, incidence_matrix, redundancy, ndim, mydim, search, bary.locations)
 {
   FEMbasis = FEM$FEMbasis
 
