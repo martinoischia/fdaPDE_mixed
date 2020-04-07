@@ -77,7 +77,7 @@ CPP_smooth.volume.FEM.basis<-function(locations, bary.locations, observations, F
 
   ## Call C++ function
   bigsol <- .Call("regression_Laplace", locations, bary.locations, data, FEMbasis$mesh, FEMbasis$mesh$order, mydim, ndim, lambda, covariates,
-                  incidence_matrix, BC$BC_indices, BC$BC_values, GCV, GCVMETHOD, nrealizations, search, DOF, DOF_matrix, PACKAGE = "fdaPDE")
+                  incidence_matrix, BC$BC_indices, BC$BC_values, GCV, GCVMETHOD, nrealizations,  DOF, DOF_matrix, search, PACKAGE = "fdaPDE")
 
   return(bigsol)
 }

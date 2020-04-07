@@ -259,13 +259,13 @@ smooth.FEM<-function(locations = NULL, observations, FEMbasis, lambda,
     stop("GCVmethod must be either Stochastic or Exact")
   }
 
-  # if(search=="naive")
-  #   search=1
-  # else if(search=="tree")
-  #   search=2
-  # else{
-  #   stop("search must be either tree or naive.")
-  # }
+  if(search=="naive")
+    search=1
+  else if(search=="tree")
+    search=2
+  else{
+    stop("search must be either tree or naive.")
+  }
 
   DOF=TRUE
   if(!is.null(DOF_matrix))

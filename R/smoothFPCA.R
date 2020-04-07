@@ -105,13 +105,13 @@ FPCA.FEM<-function(locations = NULL, bary.locations = NULL, datamatrix, FEMbasis
     stop("GCVmethod must be either Stochastic or Exact")
   }
 
-  # if(search=="naive")
-  #   search=1
-  # else if(search=="tree")
-  #   search=2
-  # else{
-  #   stop("search must be either tree or naive.")
-  # }
+  if(search=="naive")
+    search=1
+  else if(search=="tree")
+    search=2
+  else{
+    stop("search must be either tree or naive.")
+  }
 ##################### Checking parameters, sizes and conversion ################################
 
   checkSmoothingParametersFPCA(locations=locations, datamatrix=datamatrix, FEMbasis=FEMbasis, incidence_matrix=incidence_matrix, lambda=lambda, nPC=nPC, validation=validation, NFolds=NFolds, GCVmethod=GCVmethod ,nrealizations=nrealizations,search=search)

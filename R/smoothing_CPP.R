@@ -1,4 +1,4 @@
-CPP_smooth.FEM.basis<-function(locations, bary.locations, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV,GCVMETHOD = 2, nrealizations = 100, searchDOF=TRUE, DOF_matrix=NULL)
+CPP_smooth.FEM.basis<-function(locations, bary.locations, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV,GCVMETHOD = 2, nrealizations = 100, search, DOF=TRUE, DOF_matrix=NULL)
 {
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
 
@@ -75,7 +75,7 @@ CPP_smooth.FEM.basis<-function(locations, bary.locations, observations, FEMbasis
   ## Call C++ function
   bigsol <- .Call("regression_Laplace", locations, bary.locations, observations, FEMbasis$mesh, FEMbasis$order,
                   mydim, ndim, lambda, covariates, incidence_matrix, BC$BC_indices, BC$BC_values,
-                  GCV, GCVMETHOD, nrealizations, search, DOF, DOF_matrix, PACKAGE = "fdaPDE")
+                  GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search, PACKAGE = "fdaPDE")
   return(bigsol)
 }
 
@@ -159,7 +159,7 @@ CPP_smooth.FEM.PDE.basis<-function(locations, bary.locations, observations, FEMb
   ## Call C++ function
   bigsol <- .Call("regression_PDE", locations, bary.locations, observations, FEMbasis$mesh, FEMbasis$order, mydim, ndim,
                   lambda, PDE_parameters$K, PDE_parameters$b, PDE_parameters$c, covariates, incidence_matrix,
-                  BC$BC_indices, BC$BC_values, GCV,GCVMETHOD, nrealizations, search, DOF, DOF_matrix, PACKAGE = "fdaPDE")
+                  BC$BC_indices, BC$BC_values, GCV,GCVMETHOD, nrealizations, DOF, DOF_matrix, search, PACKAGE = "fdaPDE")
   return(bigsol)
 }
 
@@ -251,7 +251,7 @@ CPP_smooth.FEM.PDE.sv.basis<-function(locations, bary.locations, observations, F
   ## Call C++ function
   bigsol <- .Call("regression_PDE_space_varying", locations, bary.locations, observations, FEMbasis$mesh, FEMbasis$order,
                   mydim, ndim, lambda, PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
-                  covariates, incidence_matrix, BC$BC_indices, BC$BC_values, GCV,GCVMETHOD, nrealizations, search, DOF, DOF_matrix,
+                  covariates, incidence_matrix, BC$BC_indices, BC$BC_values, GCV,GCVMETHOD, nrealizations, DOF, DOF_matrix, search, 
                   PACKAGE = "fdaPDE")
   return(bigsol)
 }
