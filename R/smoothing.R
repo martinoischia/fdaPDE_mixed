@@ -417,7 +417,10 @@ smooth.FEM<-function(locations = NULL, observations, FEMbasis, lambda,
   class(FEMbasis$mesh) = mesh.class  
 
   # Save information of Barycenter
-  bary.locations = list(locations=locations, element_ids = bigsol[[11]], barycenters = bigsol[[12]])
+  if (is.null(bary.locations)) {
+      bary.locations = list(locations=locations, element_ids = bigsol[[11]], barycenters = bigsol[[12]])    
+  }
+  
   class(bary.locations) = "bary.locations"
 
   # Make Functional objects object
