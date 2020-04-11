@@ -141,7 +141,7 @@ eval.FEM <- function(FEM, locations = NULL, incidence_matrix = NULL, search = "t
 #'  Devillers, O. et al. 2001. Walking in a Triangulation, Proceedings of the Seventeenth Annual Symposium on Computational Geometry
 #' @export
 
-eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1,lambdaT=1)
+eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1,lambdaT=1, search = "tree")
 {
   if (is.null(FEM.time))
     stop("FEM.time required;  is NULL.")
@@ -159,6 +159,26 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
   }
   else
   {
+  	#conversion of search type
+    if(search == "naive" || search == 1)
+	  search=1
+	else if(search == "tree" || search == 2)
+	  search=2
+	else if(search == "walking" || search == 3)
+	  search=3
+
+	if(class(FEM.time$FEMbasis$mesh)=='mesh.2.5D' & search ==3){
+	  stop("2.5D search must be either tree or naive.")
+	}
+
+	if(class(FEM.time$FEMbasis$mesh)=='mesh.3D' & search ==3){
+	  stop("3D search must be either tree or naive.")
+	}
+
+	if (search != 1 & search != 2 & search != 3)
+      stop("search must be either tree or naive or walking.")
+      
+
     time_locations <- locations[,1]
     if(is.null(incidence_matrix))
     {
@@ -175,6 +195,8 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
       locations <- matrix(nrow=0, ncol=1)
     }
   }
+
+
   if(dim(FEM.time$coeff)[2]>1||dim(FEM.time$coeff)[3]>1)
   {
     if(dim(FEM.time$coeff)[2]>1 && lambdaS==1)
@@ -191,15 +213,15 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
   if(class(FEM.time$FEMbasis$mesh)=='mesh.2D'){
     ndim = 2
     mydim = 2
-    res = CPP_eval.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim)
+    res = CPP_eval.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search)
   }else if(class(FEM.time$FEMbasis$mesh)=='mesh.2.5D'){
     ndim = 3
     mydim = 2
-    res = CPP_eval.manifold.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim)
+    res = CPP_eval.manifold.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search)
   }else if(class(FEM.time$FEMbasis$mesh)=='mesh.3D'){
     ndim = 3
     mydim = 3
-    res = CPP_eval.volume.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim)
+    res = CPP_eval.volume.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search)
   }
 
   return(as.matrix(res))

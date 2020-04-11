@@ -65,7 +65,7 @@ SEXP tree_mesh_skeleton(SEXP Rmesh) {
 	return(result);
 }
 
-SEXP CPP_eval_FEM_fd(SEXP Rmesh, double* X,  double* Y,  double* Z, UInt n_X, UInt** incidenceMatrix, UInt nRegions, UInt nElements, double* coef, UInt order, UInt fast, UInt mydim, UInt ndim)
+SEXP CPP_eval_FEM_fd(SEXP Rmesh, double* X,  double* Y,  double* Z, UInt n_X, UInt** incidenceMatrix, UInt nRegions, UInt nElements, double* coef, UInt order, UInt fast, UInt mydim, UInt ndim, int search)
 {
   SEXP result;
 
@@ -76,31 +76,31 @@ SEXP CPP_eval_FEM_fd(SEXP Rmesh, double* X,  double* Y,  double* Z, UInt n_X, UI
 		//Set the mesh
 		if(order==1 && mydim==2 && ndim==2)
 		{
-			MeshHandler<1,2,2> mesh(Rmesh);
+			MeshHandler<1,2,2> mesh(Rmesh, search);
 			Evaluator<1,2,2> evaluator(mesh);
 			evaluator.eval(X, Y, n_X, coef, fast, REAL(result), isinside);
 		}
 		else if(order==2 && mydim==2 && ndim==2)
 		{
-			MeshHandler<2,2,2> mesh(Rmesh);
+			MeshHandler<2,2,2> mesh(Rmesh, search);
 			Evaluator<2,2,2> evaluator(mesh);
 			evaluator.eval(X, Y, n_X, coef, fast, REAL(result), isinside);
 		}
 		else if(order==1 && mydim==2 && ndim==3)
 		{
-			MeshHandler<1,2,3> mesh(Rmesh);
+			MeshHandler<1,2,3> mesh(Rmesh, search);
 			Evaluator<1,2,3> evaluator(mesh);
 			evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
 		}
 		else if(order==2 && mydim==2 && ndim==3)
 		{
-			MeshHandler<2,2,3> mesh(Rmesh);
+			MeshHandler<2,2,3> mesh(Rmesh, search);
 			Evaluator<2,2,3> evaluator(mesh);
 			evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
 		}
 		else if(order==1 && mydim==3 && ndim==3)
 		{
-			MeshHandler<1,3,3> mesh(Rmesh);
+			MeshHandler<1,3,3> mesh(Rmesh, search);
 			Evaluator<1,3,3> evaluator(mesh);
 			evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
 		}
@@ -375,11 +375,11 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
   \param Rmydim an R integer containing the mesh space size, 2 for 2D and 2.5D, 3 for 3D
   \param Rmydim an R integer containing the space size, 2 for 2D , 3 for 2.5D and 3D
 */
-SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_locations, SEXP RincidenceMatrix, SEXP Rcoef, SEXP Rorder, SEXP Rfast, SEXP Rflag_parabolic, SEXP Rmydim, SEXP Rndim)
+SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_locations, SEXP RincidenceMatrix, SEXP Rcoef, SEXP Rorder, SEXP Rfast, SEXP Rflag_parabolic, SEXP Rmydim, SEXP Rndim, SEXP Rsearch)
 {
   UInt mydim = INTEGER(Rmydim)[0];
   UInt ndim  = INTEGER(Rndim)[0];
-	UInt n = INTEGER(Rf_getAttrib(Rlocations, R_DimSymbol))[0];
+  UInt n = INTEGER(Rf_getAttrib(Rlocations, R_DimSymbol))[0];
   UInt ns;
   if(ndim==2)
   	ns = INTEGER(Rf_getAttrib(VECTOR_ELT(Rmesh, 0), R_DimSymbol))[0];
@@ -392,11 +392,12 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	Real *X, *Y, *Z, *mesh_time, *t;
 	UInt **incidenceMatrix;
 	double *coef;
-	int order;
+	int order, search;
 	bool fast,flag_par;
 
 	coef  = REAL(Rcoef);
   order = INTEGER(Rorder)[0];
+  search  = INTEGER(Rsearch)[0];
   fast  = INTEGER(Rfast)[0];
 	flag_par = INTEGER(Rflag_parabolic)[0];
 	mesh_time = REAL(Rmesh_time);
@@ -489,7 +490,7 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 		COEFF[j] = coef[j];
 	}
 
-	SEXP temp = CPP_eval_FEM_fd(Rmesh, X, Y, Z, n, incidenceMatrix, nRegions, nElements, COEFF, order, fast, mydim, ndim);
+	SEXP temp = CPP_eval_FEM_fd(Rmesh, X, Y, Z, n, incidenceMatrix, nRegions, nElements, COEFF, order, fast, mydim, ndim, search);
 	for(UInt k=0; k < N; k++)
 	{
 		REAL(result)[k] = REAL(temp)[k];
@@ -547,7 +548,7 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
         count++;
       }
     }
-		temp = CPP_eval_FEM_fd(Rmesh, XX.data(), YY.data(), ZZ.data(), XX.size(), INCIDENCE_MATRIX, phi.col(i).nonZeros(), nElements, COEFF, order, fast, mydim, ndim);
+		temp = CPP_eval_FEM_fd(Rmesh, XX.data(), YY.data(), ZZ.data(), XX.size(), INCIDENCE_MATRIX, phi.col(i).nonZeros(), nElements, COEFF, order, fast, mydim, ndim, search);
 		for(UInt k=0; k<indices.size(); ++k)
 		{
 			REAL(result)[indices[k]] = REAL(result)[indices[k]] + REAL(temp)[k]*phi.coeff(indices[k],i);
