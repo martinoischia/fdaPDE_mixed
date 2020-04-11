@@ -97,7 +97,7 @@ NULL
 #' print(ZincMeuseCovar$beta)
 
 
-smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL)
+smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL,search = "tree", bary.locations = NULL)
 {
   if(class(FEMbasis$mesh) == "mesh.2D"){
     ndim = 2
@@ -121,11 +121,19 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
     stop("GCVmethod must be either Stochastic or Exact")
   }
 
+  if(search=="naive")
+    search=1
+  else if(search=="tree")
+    search=2
+  else{
+    stop("search must be either tree or naive.")
+  }
+
   DOF=TRUE
   if(!is.null(DOF_matrix))
       DOF=FALSE
 
-  space_varying=checkSmoothingParameters_time(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates, PDE_parameters, incidence_matrix, BC, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix)
+  space_varying=checkSmoothingParameters_time(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates, PDE_parameters, incidence_matrix, BC, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search=search, bary.locations=bary.locations)
 
   ## Coverting to format for internal usage
   if(!is.null(locations))
@@ -180,6 +188,21 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
       time_mesh<-time_locations
   }
 
+  # Check whether the locations coincide with the mesh nodes (should be put after all the validations)
+  if (!is.null(locations)) {
+    if(dim(locations)[1]==dim(FEMbasis$mesh$nodes)[1] & dim(locations)[2]==dim(FEMbasis$mesh$nodes)[2]) {
+      sum1=0
+      sum2=0
+      for (i in 1:nrow(locations)) {
+      sum1 = sum1 + abs(locations[i,1]-FEMbasis$mesh$nodes[i,1])
+      sum2 = sum2 + abs(locations[i,2]-FEMbasis$mesh$nodes[i,2])
+      }
+      if (sum1==0 & sum2==0) {
+        message("No search algorithm is used because the locations coincide with the nodes.")
+        locations = NULL #In principle, R uses pass-by-value semantics in its function calls. So put ouside of checkSmoothingParameters function.
+      }
+    }
+  }
 
   ################## End checking parameters, sizes and conversion #############################
 
@@ -190,7 +213,7 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
     bigsol = CPP_smooth.FEM.time(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
                                   time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, covariates=covariates, incidence_matrix=incidence_matrix,
                                   ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
-                                  GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix)
+                                  GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
 
   } else if(class(FEMbasis$mesh) == 'mesh.2D' & !is.null(PDE_parameters) & space_varying==FALSE){
 
@@ -200,7 +223,7 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
                                       time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, PDE_parameters=PDE_parameters,
                                       covariates=covariates, incidence_matrix=incidence_matrix,
                                       ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
-                                      GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix)
+                                      GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
 
   } else if(class(FEMbasis$mesh) == 'mesh.2D' & !is.null(PDE_parameters) & space_varying==TRUE){
 
@@ -210,7 +233,7 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
                                         time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, PDE_parameters=PDE_parameters,
                                         covariates=covariates, incidence_matrix=incidence_matrix,
                                         ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
-                                        GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix)
+                                        GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
 
   }else if(class(FEMbasis$mesh) == 'mesh.2.5D'){
 
@@ -219,7 +242,7 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
     bigsol = CPP_smooth.manifold.FEM.time(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
                                           time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, covariates=covariates, incidence_matrix=incidence_matrix,
                                           ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
-                                          GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix)
+                                          GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
 
   }else if(class(FEMbasis$mesh) == 'mesh.3D'){
 
@@ -228,14 +251,14 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
     bigsol = CPP_smooth.volume.FEM.time(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
                                         time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, covariates=covariates, incidence_matrix=incidence_matrix,
                                         ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
-                                        GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix)
+                                        GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
 
   }
 
   N = nrow(FEMbasis$mesh$nodes)
   M = ifelse(FLAG_PARABOLIC,length(time_mesh)-1,length(time_mesh) + 2);
   if(is.null(IC) && FLAG_PARABOLIC)
-    IC = bigsol[[6]]$coeff[,bigsol[[7]]]
+    IC = bigsol[[13]]$coeff[,bigsol[[14]]]
   if(FLAG_PARABOLIC)
   {
     f = array(dim=c(length(IC)+M*N,length(lambdaS),length(lambdaT)))
@@ -263,10 +286,34 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
   else
     beta = NULL
 
-  if(all(is.na(bigsol[[6]])))
+  if(all(is.na(bigsol[[13]])))
     ICestimated = NULL
   else
-    ICestimated = list(IC.FEM=bigsol[[6]],bestlambdaindex=bigsol[[7]],bestlambda=bigsol[[8]],beta=bigsol[[9]])
+    ICestimated = list(IC.FEM=bigsol[[13]],bestlambdaindex=bigsol[[14]],bestlambda=bigsol[[15]],beta=bigsol[[16]])
+
+    # Save information of Tree Mesh
+     tree_mesh = list(
+     treelev = bigsol[[6]][1],
+     header_orig= bigsol[[7]],
+     header_scale = bigsol[[8]],
+     node_id = bigsol[[9]][,1],
+     node_left_child = bigsol[[9]][,2],
+     node_right_child = bigsol[[9]][,3],
+     node_box= bigsol[[10]])
+
+   # Reconstruct FEMbasis with tree mesh
+   mesh.class= class(FEMbasis$mesh)
+   if (is.null(FEMbasis$mesh$treelev)) { #if doesn't exist the tree information
+     FEMbasis$mesh = append(FEMbasis$mesh, tree_mesh)
+   } #if already exist the tree information, don't append
+
+   class(FEMbasis$mesh) = mesh.class
+
+   # Save information of Barycenter
+   if (is.null(bary.locations)) {
+       bary.locations = list(locations=locations, element_ids = bigsol[[11]], barycenters = bigsol[[12]])
+   }
+   class(bary.locations) = "bary.locations"
 
   # Make FEM.time objects
   fit.FEM.time  = FEM.time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)
@@ -279,9 +326,9 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
   {
     stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
     reslist=list(fit.FEM.time = fit.FEM.time, PDEmisfit.FEM.time = PDEmisfit.FEM.time,
-            beta = beta, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, ICestimated=ICestimated)
+            beta = beta, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, ICestimated=ICestimated, bary.locations = bary.locations)
   }else{
-    reslist=list(fit.FEM.time = fit.FEM.time, PDEmisfit.FEM.time = PDEmisfit.FEM.time, beta = beta, ICestimated=ICestimated)
+    reslist=list(fit.FEM.time = fit.FEM.time, PDEmisfit.FEM.time = PDEmisfit.FEM.time, beta = beta, ICestimated=ICestimated, bary.locations = bary.locations)
   }
 
   return(reslist)

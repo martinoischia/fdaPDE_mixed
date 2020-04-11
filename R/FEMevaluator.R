@@ -98,7 +98,7 @@ eval.FEM <- function(FEM, locations = NULL, incidence_matrix = NULL, search = "t
     if (flag == FALSE) {
       stop("Locations are not same as the one in barycenter information.")
     }
-  }  # end of bary.locations  
+  }  # end of bary.locations
 
   if (is.null(locations))
     locations <- matrix(nrow = 0, ncol = 2)
@@ -112,7 +112,7 @@ eval.FEM <- function(FEM, locations = NULL, incidence_matrix = NULL, search = "t
   if(class(FEM$FEMbasis$mesh)=='mesh.2D'){
     ndim = 2
     mydim = 2
-    res = CPP_eval.FEM(FEM, locations, incidence_matrix, TRUE, ndim, mydim, search, bary.locations) 
+    res = CPP_eval.FEM(FEM, locations, incidence_matrix, TRUE, ndim, mydim, search, bary.locations)
 
   }else if(class(FEM$FEMbasis$mesh)=='mesh.2.5D'){
     ndim = 3
@@ -141,12 +141,17 @@ eval.FEM <- function(FEM, locations = NULL, incidence_matrix = NULL, search = "t
 #'  Devillers, O. et al. 2001. Walking in a Triangulation, Proceedings of the Seventeenth Annual Symposium on Computational Geometry
 #' @export
 
-eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1,lambdaT=1, search = "tree")
+eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1,lambdaT=1, search = "tree", bary.locations=NULL)
 {
   if (is.null(FEM.time))
     stop("FEM.time required;  is NULL.")
   if(class(FEM.time) != "FEM.time")
     stop("'FEM.time' is not of class 'FEM.time'")
+#if locations is null but bary.locations is not null, use the locations in bary.locations
+  if(is.null(locations) & !is.null(bary.locations)) {
+    locations = bary.locations$locations
+    locations = as.matrix(locations)
+  }
   if (is.null(locations) && is.null(incidence_matrix))
     stop("'locations' OR 'incidence_matrix' required;  both are NULL.")
   if (!is.null(locations) && !is.null(incidence_matrix))
@@ -160,24 +165,40 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
   else
   {
   	#conversion of search type
-    if(search == "naive" || search == 1)
-	  search=1
-	else if(search == "tree" || search == 2)
-	  search=2
-	else if(search == "walking" || search == 3)
-	  search=3
+  	if(search == "naive" || search == 1)
+  	search=1
+  	else if(search == "tree" || search == 2)
+  	search=2
+  	else if(search == "walking" || search == 3)
+  	search=3
 
-	if(class(FEM.time$FEMbasis$mesh)=='mesh.2.5D' & search ==3){
-	  stop("2.5D search must be either tree or naive.")
-	}
+  	if(class(FEM.time$FEMbasis$mesh)=='mesh.2.5D' & search ==3){
+  		stop("2.5D search must be either tree or naive.")
+  	}
 
-	if(class(FEM.time$FEMbasis$mesh)=='mesh.3D' & search ==3){
-	  stop("3D search must be either tree or naive.")
-	}
+  	if(class(FEM.time$FEMbasis$mesh)=='mesh.3D' & search ==3){
+  		stop("3D search must be either tree or naive.")
+  	}
 
-	if (search != 1 & search != 2 & search != 3)
-      stop("search must be either tree or naive or walking.")
-      
+  	if (search != 1 & search != 2 & search != 3)
+  	stop("search must be either tree or naive or walking.")
+
+    #Check the locations in 'bary.locations' and 'locations' are the same
+    if(!is.null(bary.locations) & !is.null(locations))
+    {
+    	flag=TRUE
+    	for (i in 1:nrow(locations)) {
+    		if (!(locations[i,1]==bary.locations$locations[i,1] & locations[i,2] == bary.locations$locations[i,2])) {
+    			flag = FALSE
+    			break
+    		}
+    	}
+
+    	if (flag == FALSE) {
+    		stop("Locations are not same as the one in barycenter information.")
+    	}
+    }  # end of bary.locations  
+
 
     time_locations <- locations[,1]
     if(is.null(incidence_matrix))
@@ -208,20 +229,22 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
   else
     f = FEM.time
 
-  res <- NULL
+
+
+res <- NULL
 
   if(class(FEM.time$FEMbasis$mesh)=='mesh.2D'){
     ndim = 2
     mydim = 2
-    res = CPP_eval.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search)
+    res = CPP_eval.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search, bary.locations)
   }else if(class(FEM.time$FEMbasis$mesh)=='mesh.2.5D'){
     ndim = 3
     mydim = 2
-    res = CPP_eval.manifold.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search)
+    res = CPP_eval.manifold.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search, bary.locations)
   }else if(class(FEM.time$FEMbasis$mesh)=='mesh.3D'){
     ndim = 3
     mydim = 3
-    res = CPP_eval.volume.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search)
+    res = CPP_eval.volume.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search, bary.locations)
   }
 
   return(as.matrix(res))

@@ -44,13 +44,13 @@ SEXP tree_mesh_skeleton(SEXP Rmesh) {
 	SET_VECTOR_ELT(result, 3, Rf_allocMatrix(INTSXP, num_tree_nodes, 3)); //treenode information
 	int *rans3 = INTEGER(VECTOR_ELT(result, 3));
 	for(UInt i = 0; i < num_tree_nodes; i++)
-			rans3[i] = mesh.getTree().gettreenode(i).getid();
+		rans3[i] = mesh.getTree().gettreenode(i).getid();
 
 	for(UInt i = 0; i < num_tree_nodes; i++)
-			rans3[i + num_tree_nodes*1] = mesh.getTree().gettreenode(i).getchild(0);
+		rans3[i + num_tree_nodes*1] = mesh.getTree().gettreenode(i).getchild(0);
 
 	for(UInt i = 0; i < num_tree_nodes; i++)
-			rans3[i + num_tree_nodes*2] = mesh.getTree().gettreenode(i).getchild(1);
+		rans3[i + num_tree_nodes*2] = mesh.getTree().gettreenode(i).getchild(1);
 
 	SET_VECTOR_ELT(result, 4, Rf_allocMatrix(REALSXP, num_tree_nodes, ndim*2)); //treenode box coordinate
 	Real *rans4 = REAL(VECTOR_ELT(result, 4));
@@ -65,9 +65,30 @@ SEXP tree_mesh_skeleton(SEXP Rmesh) {
 	return(result);
 }
 
-SEXP CPP_eval_FEM_fd(SEXP Rmesh, double* X,  double* Y,  double* Z, UInt n_X, UInt** incidenceMatrix, UInt nRegions, UInt nElements, double* coef, UInt order, UInt fast, UInt mydim, UInt ndim, int search)
+SEXP CPP_eval_FEM_fd(SEXP Rmesh, double* X,  double* Y,  double* Z, UInt n_X, UInt** incidenceMatrix, UInt nRegions, UInt nElements, double* coef, UInt order, UInt fast, UInt mydim, UInt ndim, int search, SEXP RbaryLocations)
 {
-  SEXP result;
+	SEXP result;
+
+	std::vector<UInt> element_id;	
+	Real **barycenters;
+
+	//RECIEVE BARYCENTER INFORMATION FROM R
+	if (TYPEOF(RbaryLocations) != 0) { //have location information
+		element_id.assign(INTEGER(VECTOR_ELT(RbaryLocations, 1)), INTEGER(VECTOR_ELT(RbaryLocations, 1))+n_X);
+		UInt n_ = INTEGER(Rf_getAttrib(VECTOR_ELT(RbaryLocations, 2), R_DimSymbol))[0]; //barycenter rows (number of locations)
+		UInt p_ = INTEGER(Rf_getAttrib(VECTOR_ELT(RbaryLocations, 2), R_DimSymbol))[1]; //barycenter columns (number of vertices)
+
+		barycenters = (Real**) malloc(sizeof(Real*)*n_);
+		for (int i=0; i<n_; i++)
+		{
+			barycenters[i] = (Real*) malloc(sizeof(Real)*p_);
+			for (int j=0; j<p_; j++)
+			{
+				barycenters[i][j] = REAL(VECTOR_ELT(RbaryLocations, 2))[i+n_*j];
+			}
+		}
+	}
+
 
 	if (n_X>0) //pointwise data
 	{
@@ -78,31 +99,52 @@ SEXP CPP_eval_FEM_fd(SEXP Rmesh, double* X,  double* Y,  double* Z, UInt n_X, UI
 		{
 			MeshHandler<1,2,2> mesh(Rmesh, search);
 			Evaluator<1,2,2> evaluator(mesh);
-			evaluator.eval(X, Y, n_X, coef, fast, REAL(result), isinside);
+			if (TYPEOF(RbaryLocations) == 0) { //doesn't have location information
+				evaluator.eval(X, Y, n_X, coef, fast, REAL(result), isinside);
+			} else { //have location information
+				evaluator.evalWithInfo(X, Y, n_X, coef, fast, REAL(result), isinside, element_id, barycenters);
+			}
 		}
 		else if(order==2 && mydim==2 && ndim==2)
 		{
 			MeshHandler<2,2,2> mesh(Rmesh, search);
 			Evaluator<2,2,2> evaluator(mesh);
-			evaluator.eval(X, Y, n_X, coef, fast, REAL(result), isinside);
+			if (TYPEOF(RbaryLocations) == 0) { //doesn't have location information	
+				evaluator.eval(X, Y, n_X, coef, fast, REAL(result), isinside);
+			} else { //have location information
+				evaluator.evalWithInfo(X, Y, n_X, coef, fast, REAL(result), isinside, element_id, barycenters);
+			}
 		}
 		else if(order==1 && mydim==2 && ndim==3)
-		{
+		{ 
 			MeshHandler<1,2,3> mesh(Rmesh, search);
 			Evaluator<1,2,3> evaluator(mesh);
-			evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
+			if (TYPEOF(RbaryLocations) == 0) { //doesn't have location information
+				evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
+			} else { //have location information
+				evaluator.evalWithInfo(X, Y, Z, n_X, coef, fast, REAL(result), isinside, element_id, barycenters);
+			}
+
 		}
 		else if(order==2 && mydim==2 && ndim==3)
 		{
 			MeshHandler<2,2,3> mesh(Rmesh, search);
 			Evaluator<2,2,3> evaluator(mesh);
-			evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
+			if (TYPEOF(RbaryLocations) == 0) { //doesn't have location information
+				evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
+			} else { //have location information
+				evaluator.evalWithInfo(X, Y, Z, n_X, coef, fast, REAL(result), isinside, element_id, barycenters);
+			}
 		}
 		else if(order==1 && mydim==3 && ndim==3)
-		{
+		{ 
 			MeshHandler<1,3,3> mesh(Rmesh, search);
 			Evaluator<1,3,3> evaluator(mesh);
-			evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
+			if (TYPEOF(RbaryLocations) == 0) { //doesn't have location information	
+				evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
+			} else { //have location information
+				evaluator.evalWithInfo(X, Y, Z, n_X, coef, fast, REAL(result), isinside, element_id, barycenters);
+			}
 		}
 
 		for (int i=0; i<n_X; ++i)
@@ -151,7 +193,7 @@ SEXP CPP_eval_FEM_fd(SEXP Rmesh, double* X,  double* Y,  double* Z, UInt n_X, UI
 
 	UNPROTECT(1);
     // result list
-  return(result);
+	return(result);
 }
 
 extern "C" {
@@ -203,11 +245,11 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
 	bool fast;
 
 	coef  = REAL(Rcoef);
-    order = INTEGER(Rorder)[0];
-    fast  = INTEGER(Rfast)[0];
-    mydim = INTEGER(Rmydim)[0];
-    ndim  = INTEGER(Rndim)[0];
-    search  = INTEGER(Rsearch)[0];
+	order = INTEGER(Rorder)[0];
+	fast  = INTEGER(Rfast)[0];
+	mydim = INTEGER(Rmydim)[0];
+	ndim  = INTEGER(Rndim)[0];
+	search  = INTEGER(Rsearch)[0];
 
 	X = (double*) malloc(sizeof(double)*n_X);
 	Y = (double*) malloc(sizeof(double)*n_X);
@@ -242,7 +284,7 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
 		}
 	}
 
-    SEXP result;
+	SEXP result;
 
 	if (n_X>0) //pointwise data
 	{
@@ -354,7 +396,7 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
 
 	UNPROTECT(1);
     // result list
-    return(result);
+	return(result);
 }
 
 
@@ -375,19 +417,22 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
   \param Rmydim an R integer containing the mesh space size, 2 for 2D and 2.5D, 3 for 3D
   \param Rmydim an R integer containing the space size, 2 for 2D , 3 for 2.5D and 3D
 */
-SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_locations, SEXP RincidenceMatrix, SEXP Rcoef, SEXP Rorder, SEXP Rfast, SEXP Rflag_parabolic, SEXP Rmydim, SEXP Rndim, SEXP Rsearch)
+SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_locations, SEXP RincidenceMatrix, SEXP Rcoef, SEXP Rorder, SEXP Rfast, SEXP Rflag_parabolic, SEXP Rmydim, SEXP Rndim, SEXP Rsearch, SEXP RbaryLocations)
 {
-  UInt mydim = INTEGER(Rmydim)[0];
-  UInt ndim  = INTEGER(Rndim)[0];
-  UInt n = INTEGER(Rf_getAttrib(Rlocations, R_DimSymbol))[0];
-  UInt ns;
-  if(ndim==2)
-  	ns = INTEGER(Rf_getAttrib(VECTOR_ELT(Rmesh, 0), R_DimSymbol))[0];
-  else
-    ns = INTEGER(VECTOR_ELT(Rmesh,0))[0];
-  UInt nt = Rf_length(Rmesh_time);
+	UInt mydim = INTEGER(Rmydim)[0];
+	UInt ndim  = INTEGER(Rndim)[0];
+	UInt n = INTEGER(Rf_getAttrib(Rlocations, R_DimSymbol))[0];
+	UInt ns;
+	if(ndim==2)
+		ns = INTEGER(Rf_getAttrib(VECTOR_ELT(Rmesh, 0), R_DimSymbol))[0];
+	else
+		ns = INTEGER(VECTOR_ELT(Rmesh,0))[0];
+
+	UInt nt = Rf_length(Rmesh_time);
 	UInt nRegions = INTEGER(Rf_getAttrib(RincidenceMatrix, R_DimSymbol))[0];
 	UInt nElements = INTEGER(Rf_getAttrib(RincidenceMatrix, R_DimSymbol))[1]; //number of triangles/tetrahedron if areal data
+
+
 	//Declare pointer to access data from C++
 	Real *X, *Y, *Z, *mesh_time, *t;
 	UInt **incidenceMatrix;
@@ -396,9 +441,9 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	bool fast,flag_par;
 
 	coef  = REAL(Rcoef);
-  order = INTEGER(Rorder)[0];
-  search  = INTEGER(Rsearch)[0];
-  fast  = INTEGER(Rfast)[0];
+	order = INTEGER(Rorder)[0];
+	search  = INTEGER(Rsearch)[0];
+	fast  = INTEGER(Rfast)[0];
 	flag_par = INTEGER(Rflag_parabolic)[0];
 	mesh_time = REAL(Rmesh_time);
 	t = REAL(Rtime_locations);
@@ -440,7 +485,7 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	UInt DEGREE = flag_par ? 1 : 3;
 	UInt M = nt + DEGREE - 1;
 	SpMat phi(n,M);
-  UInt N = nRegions==0 ? n : nRegions;
+	UInt N = nRegions==0 ? n : nRegions;
 	if(flag_par)
 	{
 		Spline<IntegratorGaussP5,1,0>spline(mesh_time,nt);
@@ -477,11 +522,11 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 
 	SEXP result;
 
-  PROTECT(result=Rf_allocVector(REALSXP, N));
+	PROTECT(result=Rf_allocVector(REALSXP, N));
 	Real* COEFF;
 	COEFF = (double*) malloc(sizeof(double)*ns);
 	std::vector<Real> XX,YY,ZZ;
-  std::vector<UInt> indices;
+	std::vector<UInt> indices;
 
   //!evaluates the solution on the given points location at the first
   //!node of the time mesh to initialize the array of results and retrieve the points out of mesh (NA)
@@ -490,7 +535,7 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 		COEFF[j] = coef[j];
 	}
 
-	SEXP temp = CPP_eval_FEM_fd(Rmesh, X, Y, Z, n, incidenceMatrix, nRegions, nElements, COEFF, order, fast, mydim, ndim, search);
+	SEXP temp = CPP_eval_FEM_fd(Rmesh, X, Y, Z, n, incidenceMatrix, nRegions, nElements, COEFF, order, fast, mydim, ndim, search, RbaryLocations);
 	for(UInt k=0; k < N; k++)
 	{
 		REAL(result)[k] = REAL(temp)[k];
@@ -506,75 +551,76 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 		{
 			COEFF[j] = coef[i*ns+j];
 		}
-    if (ndim==3)
-    {
+		if (ndim==3)
+		{
+			for(UInt k=0; k<n; k++)
+			{
+				if(phi.coeff(k,i)!=0 && !ISNA(REAL(result)[k]))
+				{
+					XX.push_back(X[k]);
+					YY.push_back(Y[k]);
+					ZZ.push_back(Z[k]);
+					indices.push_back(k);
+				}
+			}
+		}
+  	else //ndim==2
+  	{
   		for(UInt k=0; k<n; k++)
   		{
   			if(phi.coeff(k,i)!=0 && !ISNA(REAL(result)[k]))
   			{
   				XX.push_back(X[k]);
   				YY.push_back(Y[k]);
-  				ZZ.push_back(Z[k]);
   				indices.push_back(k);
   			}
-      }
-    }
-  	else //ndim==2
-    {
-  		for(UInt k=0; k<n; k++)
-  		{
-  			if(phi.coeff(k,i)!=0 && !ISNA(REAL(result)[k]))
-				{
-					XX.push_back(X[k]);
-					YY.push_back(Y[k]);
-					indices.push_back(k);
-				}
-			}
-		}
-    UInt count=0;
-    UInt **INCIDENCE_MATRIX;
-    INCIDENCE_MATRIX = (UInt**)malloc(sizeof(UInt*)*phi.col(i).nonZeros());
+  		}
+  	}
+  	UInt count=0;
+  	UInt **INCIDENCE_MATRIX;
+  	INCIDENCE_MATRIX = (UInt**)malloc(sizeof(UInt*)*phi.col(i).nonZeros());
 
   	for (UInt k=0; k<nRegions; k++)
   	{
-      if(phi.coeff(k,i)!=0 && !ISNA(REAL(result)[k]))
-      {
-        INCIDENCE_MATRIX[count] = (UInt*) malloc(sizeof(UInt)*nElements);
-    		for (UInt j=0; j<nElements; j++)
-    		{
-    			INCIDENCE_MATRIX[count][j] = incidenceMatrix[k][j];
-    		}
-        indices.push_back(k);
-        count++;
-      }
-    }
-		temp = CPP_eval_FEM_fd(Rmesh, XX.data(), YY.data(), ZZ.data(), XX.size(), INCIDENCE_MATRIX, phi.col(i).nonZeros(), nElements, COEFF, order, fast, mydim, ndim, search);
-		for(UInt k=0; k<indices.size(); ++k)
-		{
-			REAL(result)[indices[k]] = REAL(result)[indices[k]] + REAL(temp)[k]*phi.coeff(indices[k],i);
-		}
-		XX.clear();YY.clear();ZZ.clear();indices.clear();
+  		if(phi.coeff(k,i)!=0 && !ISNA(REAL(result)[k]))
+  		{
+  			INCIDENCE_MATRIX[count] = (UInt*) malloc(sizeof(UInt)*nElements);
+  			for (UInt j=0; j<nElements; j++)
+  			{
+  				INCIDENCE_MATRIX[count][j] = incidenceMatrix[k][j];
+  			}
+  			indices.push_back(k);
+  			count++;
+  		}
+  	}
+  	temp = CPP_eval_FEM_fd(Rmesh, XX.data(), YY.data(), ZZ.data(), XX.size(), INCIDENCE_MATRIX, phi.col(i).nonZeros(), nElements, COEFF, order, fast, mydim, ndim, search, RbaryLocations);
+  	for(UInt k=0; k < N; k++)
+  		for(UInt k=0; k<indices.size(); ++k)
+  		{
+  			REAL(result)[indices[k]] = REAL(result)[indices[k]] + REAL(temp)[k]*phi.coeff(indices[k],i);
+  		}
+  		XX.clear();YY.clear();ZZ.clear();indices.clear();
 
-    if(nRegions!=0)
-    {
-      for (int l=0; l<phi.col(i).nonZeros(); l++)
-      {
-        free(INCIDENCE_MATRIX[l]);
-      }
-    }
-    free(INCIDENCE_MATRIX);
-	}
+  		if(nRegions!=0)
+  		{
+  			for (int l=0; l<phi.col(i).nonZeros(); l++)
+  			{
+  				free(INCIDENCE_MATRIX[l]);
+  			}
+  		}
+  		free(INCIDENCE_MATRIX);
+  	}
 
-	free(X); free(Y); free(Z); free(COEFF);
-	for (int i=0; i<nRegions; i++)
-	{
-		free(incidenceMatrix[i]);
-	}
-	free(incidenceMatrix);
+  	free(X); free(Y); free(Z); free(COEFF);
+  	for (int i=0; i<nRegions; i++)
+  	{
+  		free(incidenceMatrix[i]);
+  	}
+  	free(incidenceMatrix);
 
-	UNPROTECT(1);
-	return(result);
-}
+  	UNPROTECT(1);
+  	return(result);
+  }
 
 
 //! This function evaluates the solution on the mesh nodes at a given time with the purpose of plotting it.
@@ -587,77 +633,77 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	\param Rcoef an R-vector the coefficients of the solution
   \param Rflag_parabolic an R logical TRUE for parabolic smoothing, FALSE otherwise
 */
-SEXP eval_FEM_time_nodes(SEXP Rns, SEXP Rmesh_time, SEXP Rtime, SEXP Rcoef, SEXP Rflag_parabolic)
-{
-	UInt ns = INTEGER(Rns)[0];
-	UInt nt = Rf_length(Rmesh_time);
-  UInt n = Rf_length(Rtime);
+  SEXP eval_FEM_time_nodes(SEXP Rns, SEXP Rmesh_time, SEXP Rtime, SEXP Rcoef, SEXP Rflag_parabolic)
+  {
+  	UInt ns = INTEGER(Rns)[0];
+  	UInt nt = Rf_length(Rmesh_time);
+  	UInt n = Rf_length(Rtime);
 
-	Real *mesh_time = REAL(Rmesh_time);
-	Real *t = REAL(Rtime);
-	bool flag_par = INTEGER(Rflag_parabolic)[0];
+  	Real *mesh_time = REAL(Rmesh_time);
+  	Real *t = REAL(Rtime);
+  	bool flag_par = INTEGER(Rflag_parabolic)[0];
 
-	UInt DEGREE = flag_par ? 1 : 3;
-	UInt M = nt + DEGREE - 1;
-	MatrixXr phi(M,n);
+  	UInt DEGREE = flag_par ? 1 : 3;
+  	UInt M = nt + DEGREE - 1;
+  	MatrixXr phi(M,n);
 
-	if(flag_par)
-	{
-		Spline<IntegratorGaussP5,1,0>spline(mesh_time,nt);
-    for (UInt i=0; i < n; ++i)
-    {
-      for (UInt j = 0; j < M; ++j)
-			{
-				phi(j,i) = spline.BasisFunction(DEGREE, j, t[i]);
-			}
-    }
-	}
-	else
-	{
-		Spline<IntegratorGaussP5,3,2>spline(mesh_time,nt);
-    for (UInt i=0; i < n; ++i)
-    {
-      for (UInt j = 0; j < M; ++j)
+  	if(flag_par)
+  	{
+  		Spline<IntegratorGaussP5,1,0>spline(mesh_time,nt);
+  		for (UInt i=0; i < n; ++i)
+  		{
+  			for (UInt j = 0; j < M; ++j)
   			{
   				phi(j,i) = spline.BasisFunction(DEGREE, j, t[i]);
   			}
-    }
-	}
-
-	SEXP result;
-
-	PROTECT(result=Rf_allocVector(REALSXP, ns*n));
-
-  for(UInt j=0; j<n; ++j)
-  {
-    for(UInt k=0; k<ns; ++k)
-  	{
-  		REAL(result)[k+j*ns] = REAL(Rcoef)[k]*phi(0,j);
+  		}
   	}
-  }
-	for(UInt i=1; i < M; i++)
-	{
-    for(UInt j=0; j<n; ++j)
-    {
-      if(phi(i,j)!=0)
+  	else
+  	{
+  		Spline<IntegratorGaussP5,3,2>spline(mesh_time,nt);
+  		for (UInt i=0; i < n; ++i)
   		{
-        for(UInt k=0; k<ns; ++k)
-    		{
-    			REAL(result)[k+j*ns] = REAL(result)[k+j*ns] + REAL(Rcoef)[k+ns*i]*phi(i,j);
-    		}
-      }
-    }
-	}
+  			for (UInt j = 0; j < M; ++j)
+  			{
+  				phi(j,i) = spline.BasisFunction(DEGREE, j, t[i]);
+  			}
+  		}
+  	}
 
-	UNPROTECT(1);
-	return(result);
-}
+  	SEXP result;
 
-SEXP points_projection(SEXP Rmesh, SEXP Rlocations)
-{
-	int n_X = INTEGER(Rf_getAttrib(Rlocations, R_DimSymbol))[0];
+  	PROTECT(result=Rf_allocVector(REALSXP, ns*n));
+
+  	for(UInt j=0; j<n; ++j)
+  	{
+  		for(UInt k=0; k<ns; ++k)
+  		{
+  			REAL(result)[k+j*ns] = REAL(Rcoef)[k]*phi(0,j);
+  		}
+  	}
+  	for(UInt i=1; i < M; i++)
+  	{
+  		for(UInt j=0; j<n; ++j)
+  		{
+  			if(phi(i,j)!=0)
+  			{
+  				for(UInt k=0; k<ns; ++k)
+  				{
+  					REAL(result)[k+j*ns] = REAL(result)[k+j*ns] + REAL(Rcoef)[k+ns*i]*phi(i,j);
+  				}
+  			}
+  		}
+  	}
+
+  	UNPROTECT(1);
+  	return(result);
+  }
+
+  SEXP points_projection(SEXP Rmesh, SEXP Rlocations)
+  {
+  	int n_X = INTEGER(Rf_getAttrib(Rlocations, R_DimSymbol))[0];
 	//Declare pointer to access data from C++
-	double X, Y, Z;
+  	double X, Y, Z;
 
     // Cast all computation parameters
     std::vector<Point> deData_(n_X); // the points to be projected
@@ -665,12 +711,12 @@ SEXP points_projection(SEXP Rmesh, SEXP Rlocations)
     
     //RECIEVE PROJECTION INFORMATION FROM R
     for (int i=0; i<n_X; i++)
-	{
-		X = REAL(Rlocations)[i + n_X*0];
-		Y = REAL(Rlocations)[i + n_X*1];
-		Z = REAL(Rlocations)[i + n_X*2];
-		deData_[i]=Point(X,Y,Z);
-	}
+    {
+    	X = REAL(Rlocations)[i + n_X*0];
+    	Y = REAL(Rlocations)[i + n_X*1];
+    	Z = REAL(Rlocations)[i + n_X*2];
+    	deData_[i]=Point(X,Y,Z);
+    }
 
     SEXP result;
 
@@ -680,9 +726,9 @@ SEXP points_projection(SEXP Rmesh, SEXP Rlocations)
 		UInt order = INTEGER(VECTOR_ELT(Rmesh,4))[0];
 
 		if (order == 1) {
-		MeshHandler<1,2,3> mesh(Rmesh);
-		projection<1,2,3> projector(mesh, deData_);
-		prjData_ = projector.computeProjection();
+			MeshHandler<1,2,3> mesh(Rmesh);
+			projection<1,2,3> projector(mesh, deData_);
+			prjData_ = projector.computeProjection();
 		}
 
 		// if (order == 2) {
@@ -701,7 +747,7 @@ SEXP points_projection(SEXP Rmesh, SEXP Rlocations)
 
 	UNPROTECT(1);
     // result matrix
-    return(result);
+	return(result);
 }
 
 SEXP tree_mesh_construction(SEXP Rmesh, SEXP Rorder, SEXP Rmydim, SEXP Rndim) {

@@ -38,19 +38,19 @@ CPP_smooth.volume.FEM.time<-function(locations, time_locations, observations, FE
   if(is.null(BC$BC_indices))
   {
     BC$BC_indices<-vector(length=0)
-  }else
-  {
-    BC$BC_indices<-as.vector(BC$BC_indices)-1
+    }else
+    {
+      BC$BC_indices<-as.vector(BC$BC_indices)-1
 
-  }
+    }
 
-  if(is.null(BC$BC_values))
-  {
-    BC$BC_values<-vector(length=0)
-  }else
-  {
-    BC$BC_values<-as.vector(BC$BC_values)
-  }
+    if(is.null(BC$BC_values))
+    {
+      BC$BC_values<-vector(length=0)
+      }else
+      {
+        BC$BC_values<-as.vector(BC$BC_values)
+      }
 
   ## Set propr type for correct C++ reading
   locations <- as.matrix(locations)
@@ -99,7 +99,7 @@ CPP_smooth.volume.FEM.time<-function(locations, time_locations, observations, FE
     NobsIC = length(observations)%/%nrow(time_locations)
 
     if(nrow(covariates)==0)
-      covariatesIC = covariates
+    covariatesIC = covariates
     else
     {
       covariatesIC = covariates[1:NobsIC,]
@@ -113,9 +113,9 @@ CPP_smooth.volume.FEM.time<-function(locations, time_locations, observations, FE
     storage.mode(lambdaSIC) <- "double"
     ## call the smoothing function with initial observations to estimates the IC
     ICsol <- .Call("regression_Laplace", locations, observations[1:NobsIC],
-                  FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC, covariatesIC,
-                  incidence_matrix, BC$BC_indices, BC$BC_values,
-                  T, as.integer(1), nrealizations, T, DOF_matrix, search, PACKAGE = "fdaPDE")
+      FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC, covariatesIC,
+      incidence_matrix, BC$BC_indices, BC$BC_values,
+      T, as.integer(1), nrealizations, T, DOF_matrix, search, PACKAGE = "fdaPDE")
 
     ## shifting the lambdas interval if the best lambda is the smaller one and retry smoothing
     if((ICsol[[4]][1]+1)==1)
@@ -124,9 +124,9 @@ CPP_smooth.volume.FEM.time<-function(locations, time_locations, observations, FE
       lambdaSIC <- as.matrix(lambdaSIC)
       storage.mode(lambdaSIC) <- "double"
       ICsol <- .Call("regression_Laplace", locations, observations[1:NobsIC],
-                    FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC, covariatesIC,
-                    incidence_matrix, BC$BC_indices, BC$BC_values,
-                    T, as.integer(1), nrealizations, T, DOF_matrix, search, PACKAGE = "fdaPDE")
+        FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC, covariatesIC,
+        incidence_matrix, BC$BC_indices, BC$BC_values,
+        T, as.integer(1), nrealizations, T, DOF_matrix, search, PACKAGE = "fdaPDE")
     }
     else
     {
@@ -137,9 +137,9 @@ CPP_smooth.volume.FEM.time<-function(locations, time_locations, observations, FE
         lambdaSIC <- as.matrix(lambdaSIC)
         storage.mode(lambdaSIC) <- "double"
         ICsol <- .Call("regression_Laplace", locations, observations[1:NobsIC],
-                      FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC, covariatesIC,
-                      incidence_matrix, BC$BC_indices, BC$BC_values,
-                      T, as.integer(1), nrealizations, T, DOF_matrix, search, PACKAGE = "fdaPDE")
+          FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC, covariatesIC,
+          incidence_matrix, BC$BC_indices, BC$BC_values,
+          T, as.integer(1), nrealizations, T, DOF_matrix, search, PACKAGE = "fdaPDE")
       }
     }
 
@@ -172,13 +172,13 @@ CPP_smooth.volume.FEM.time<-function(locations, time_locations, observations, FE
 
   ## Call C++ function
   bigsol <- .Call("regression_Laplace_time", locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$mesh$order, mydim, ndim, lambdaS, lambdaT, covariates,
-                  incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
-                  IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search, package = "fdaPDE")
+    incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
+    IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search, package = "fdaPDE")
 
   return(c(bigsol,ICsol))
 }
 
-CPP_eval.volume.FEM.time = function(FEM.time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim, search)
+CPP_eval.volume.FEM.time = function(FEM.time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim, search, bary.locations)
 {
   FEMbasis = FEM.time$FEMbasis
 
@@ -211,6 +211,15 @@ CPP_eval.volume.FEM.time = function(FEM.time, locations, time_locations, inciden
   storage.mode(FLAG_PARABOLIC) <- "integer"
   storage.mode(search) <- "integer"
 
+  if(!is.null(bary.locations))
+  {
+    storage.mode(bary.locations$element_ids) <- "integer"
+    element_ids <- as.matrix(bary.locations$element_ids)
+    storage.mode(bary.locations$barycenters) <- "double"
+    barycenters <- as.matrix(bary.locations$barycenters)
+  }
+  
+
   if (search == 1) { #use Naive search
     print('This is Naive Search')
   } else if (search == 2)  { #use Tree search (default)
@@ -221,7 +230,7 @@ CPP_eval.volume.FEM.time = function(FEM.time, locations, time_locations, inciden
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))
   for (i in 1:ncol(coeff)){
     evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM.time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
-                         FEMbasis$order, redundancy, FLAG_PARABOLIC, mydim, ndim, search, package = "fdaPDE")
+     FEMbasis$order, redundancy, FLAG_PARABOLIC, mydim, ndim, search, bary.locations, package = "fdaPDE")
   }
 
   #Returning the evaluation matrix

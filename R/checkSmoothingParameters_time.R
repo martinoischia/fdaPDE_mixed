@@ -1,4 +1,4 @@
-checkSmoothingParameters_time<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE,GCVmethod = 2,nrealizations = 100, DOF=NULL, DOF_matrix=NULL)
+checkSmoothingParameters_time<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE,GCVmethod = 2,nrealizations = 100, DOF=NULL, DOF_matrix=NULL, search, bary.locations=bary.locations)
 {
   #################### Parameter Check #########################
 
@@ -76,6 +76,22 @@ checkSmoothingParameters_time<-function(locations = NULL, time_locations=NULL, o
       stop("'c' required in PDE_parameters;  is NULL.")
   }
 
+  #Check the locations in 'bary.locations' and 'locations' are the same
+ if(!is.null(bary.locations) & !is.null(locations))
+ {
+   flag=TRUE
+   for (i in 1:nrow(locations)) {
+     if (!(locations[i,1]==bary.locations$locations[i,1] & locations[i,2] == bary.locations$locations[i,2])) {
+       flag = FALSE
+       break
+     }
+   }
+
+   if (flag == FALSE) {
+     stop("Locations are not same as the one in barycenter information.")
+   }
+ }  # end of bary.locations
+ 
   space_varying=FALSE
 
   if(!is.null(PDE_parameters$u)){
