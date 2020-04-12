@@ -1,4 +1,4 @@
-CPP_smooth.FEM.time<-function(locations,bary.locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV ,GCVMETHOD = 2, nrealizations = 100, search, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.FEM.time<-function(locations, bary.locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV ,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL, search)
 {
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
 
@@ -135,7 +135,7 @@ CPP_smooth.FEM.time<-function(locations,bary.locations, time_locations, observat
       ICsol <- .Call("regression_Laplace", locationsIC, bary.locations, observationsIC,
                     FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC, covariatesIC,
                     incidence_matrix, BC$BC_indices, BC$BC_values,
-                    T, as.integer(1), nrealizations, T, DOF_matrix, search,PACKAGE = "fdaPDE")
+                    T, as.integer(1), nrealizations, T, DOF_matrix, search, PACKAGE = "fdaPDE")
     }
     else
     {
@@ -185,7 +185,7 @@ CPP_smooth.FEM.time<-function(locations,bary.locations, time_locations, observat
   return(c(bigsol,ICsol))
 }
 
-CPP_smooth.FEM.PDE.time<-function(locations,bary.locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, search, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.FEM.PDE.time<-function(locations, bary.locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, search, DOF=TRUE,DOF_matrix=NULL)
 {
 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
@@ -300,7 +300,7 @@ CPP_smooth.FEM.PDE.time<-function(locations,bary.locations, time_locations, obse
     lambdaSIC <- 10^seq(-7,3,0.1)
     lambdaSIC <- as.matrix(lambdaSIC)
     storage.mode(lambdaSIC) <- "double"
-    ICsol <- .Call("regression_PDE", locations,bary.locations, observations[1:NobsIC],
+    ICsol <- .Call("regression_PDE", locations, bary.locations, observations[1:NobsIC],
                   FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC,
                   PDE_parameters$K, PDE_parameters$b, PDE_parameters$c,
                   covariatesIC, incidence_matrix, BC$BC_indices, BC$BC_values,
@@ -359,14 +359,14 @@ CPP_smooth.FEM.PDE.time<-function(locations,bary.locations, time_locations, obse
   storage.mode(BC$BC_values) <-"double"
 
   ## Call C++ function
-  bigsol <- .Call("regression_PDE_time", locations,bary.locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
+  bigsol <- .Call("regression_PDE_time", locations, bary.locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
                   mydim, ndim, lambdaS, lambdaT, PDE_parameters$K, PDE_parameters$b, PDE_parameters$c, covariates,
                   incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
                   IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search, PACKAGE = "fdaPDE")
   return(c(bigsol,ICsol))
 }
 
-CPP_smooth.FEM.PDE.sv.time<-function(locations,bary.locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, search, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.FEM.PDE.sv.time<-function(locations, bary.locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, search, DOF=TRUE,DOF_matrix=NULL)
 {
 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
@@ -489,22 +489,22 @@ CPP_smooth.FEM.PDE.sv.time<-function(locations,bary.locations, time_locations, o
     lambdaSIC <- as.matrix(lambdaSIC)
     storage.mode(lambdaSIC) <- "double"
 
-    ICsol <- .Call("regression_PDE_space_varying", locations,bary.locations, observations[1:NobsIC],
+    ICsol <- .Call("regression_PDE_space_varying", locations, bary.locations, observations[1:NobsIC],
                   FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC,
                   PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
                   covariatesIC, incidence_matrix, BC$BC_indices, BC$BC_values,
-                  T, as.integer(1), nrealizations, T, DOF_matrix, search,PACKAGE = "fdaPDE")
+                  T, as.integer(1), nrealizations, T, DOF_matrix, search, PACKAGE = "fdaPDE")
 
     if((ICsol[[4]][1]+1)==1)
     {
       lambdaSIC <- 10^seq(-9,-7,0.1)
       lambdaSIC <- as.matrix(lambdaSIC)
       storage.mode(lambdaSIC) <- "double"
-      ICsol <- .Call("regression_PDE_space_varying", locations, bary.locations,observations[1:NobsIC],
+      ICsol <- .Call("regression_PDE_space_varying", locations, bary.locations, observations[1:NobsIC],
                     FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC,
                     PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
                     covariatesIC, incidence_matrix, BC$BC_indices, BC$BC_values,
-                    T, as.integer(1), nrealizations, T, DOF_matrix, search,PACKAGE = "fdaPDE")
+                    T, as.integer(1), nrealizations, T, DOF_matrix, search, PACKAGE = "fdaPDE")
     }
     else
     {
@@ -513,11 +513,11 @@ CPP_smooth.FEM.PDE.sv.time<-function(locations,bary.locations, time_locations, o
         lambdaSIC <- 10^seq(3,5,0.1)
         lambdaSIC <- as.matrix(lambdaSIC)
         storage.mode(lambdaSIC) <- "double"
-        ICsol <- .Call("regression_PDE_space_varying", locations,bary.locations, observations[1:NobsIC],
+        ICsol <- .Call("regression_PDE_space_varying", locations, bary.locations, observations[1:NobsIC],
                       FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC,
                       PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
                       covariatesIC, incidence_matrix, BC$BC_indices, BC$BC_values,
-                      T, as.integer(1), nrealizations, T, DOF_matrix, search,PACKAGE = "fdaPDE")
+                      T, as.integer(1), nrealizations, T, DOF_matrix, search, PACKAGE = "fdaPDE")
       }
     }
 
@@ -548,7 +548,7 @@ CPP_smooth.FEM.PDE.sv.time<-function(locations,bary.locations, time_locations, o
   storage.mode(BC$BC_values) <-"double"
 
   ## Call C++ function
-  bigsol <- .Call("regression_PDE_space_varying_time", locations,bary.locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
+  bigsol <- .Call("regression_PDE_space_varying_time", locations, bary.locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
                   mydim, ndim, lambdaS, lambdaT,  PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u, covariates,
                   incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
                   IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search, PACKAGE = "fdaPDE")
@@ -606,6 +606,14 @@ CPP_eval.FEM.time <- function(FEM.time, locations, time_locations, incidence_mat
     element_ids <- as.matrix(bary.locations$element_ids)
     storage.mode(bary.locations$barycenters) <- "double"
     barycenters <- as.matrix(bary.locations$barycenters)
+  }
+
+  if (search == 1) { #use Naive search
+    print('This is Naive Search')
+  } else if (search == 2)  { #use Tree search (default)
+    print('This is Tree Search')
+  } else if (search == 3) { #use Walking search
+      print('This is Walking Search')
   }
 
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp

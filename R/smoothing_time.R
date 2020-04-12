@@ -97,7 +97,7 @@ NULL
 #' print(ZincMeuseCovar$beta)
 
 
-smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL,search = "tree", bary.locations = NULL)
+smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL, search = "tree", bary.locations = NULL)
 {
   if(class(FEMbasis$mesh) == "mesh.2D"){
     ndim = 2
@@ -129,6 +129,12 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
     stop("search must be either tree or naive.")
   }
 
+  #if locations is null but bary.locations is not null, use the locations in bary.locations
+  if(is.null(locations) & !is.null(bary.locations)) {
+    locations = bary.locations$locations
+    locations = as.matrix(locations)
+  }
+  
   DOF=TRUE
   if(!is.null(DOF_matrix))
       DOF=FALSE

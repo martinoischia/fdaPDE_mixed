@@ -147,11 +147,13 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
     stop("FEM.time required;  is NULL.")
   if(class(FEM.time) != "FEM.time")
     stop("'FEM.time' is not of class 'FEM.time'")
-#if locations is null but bary.locations is not null, use the locations in bary.locations
+
+  #if locations is null but bary.locations is not null, use the locations in bary.locations
   if(is.null(locations) & !is.null(bary.locations)) {
     locations = bary.locations$locations
     locations = as.matrix(locations)
   }
+
   if (is.null(locations) && is.null(incidence_matrix))
     stop("'locations' OR 'incidence_matrix' required;  both are NULL.")
   if (!is.null(locations) && !is.null(incidence_matrix))
@@ -163,7 +165,11 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
     stop("time locations required; is NULL.")
   }
   else
-  {
+  { # if(!is.null(locations))
+  	if(dim(locations)[1]==dim(FEFEM.timeM$FEMbasis$mesh$nodes)[1] & dim(locations)[2]==dim(FEM.time$FEMbasis$mesh$nodes)[2])
+    warning("The locations matrix has the same dimensions as the mesh nodes. If you want to get the FEM object evaluation
+            at the mesh nodes, use FEM$coeff instead.")
+
   	#conversion of search type
   	if(search == "naive" || search == 1)
   	search=1
