@@ -1,4 +1,4 @@
-CPP_smooth.FEM.basis<-function(locations, bary.locations, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV,GCVMETHOD = 2, nrealizations = 100, search, DOF=TRUE, DOF_matrix=NULL)
+CPP_smooth.FEM.basis<-function(locations, bary.locations, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV, GCVMETHOD = 2, nrealizations = 100, DOF=TRUE, DOF_matrix=NULL, search)
 {
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
 
@@ -79,7 +79,7 @@ CPP_smooth.FEM.basis<-function(locations, bary.locations, observations, FEMbasis
   return(bigsol)
 }
 
-CPP_smooth.FEM.PDE.basis<-function(locations, bary.locations, observations, FEMbasis, lambda, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV,GCVMETHOD = 2, nrealizations = 100, search, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.FEM.PDE.basis<-function(locations, bary.locations, observations, FEMbasis, lambda, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL, search)
 {
 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
@@ -163,7 +163,7 @@ CPP_smooth.FEM.PDE.basis<-function(locations, bary.locations, observations, FEMb
   return(bigsol)
 }
 
-CPP_smooth.FEM.PDE.sv.basis<-function(locations, bary.locations, observations, FEMbasis, lambda, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV,GCVMETHOD = 2, nrealizations = 100, search, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.FEM.PDE.sv.basis<-function(locations, bary.locations, observations, FEMbasis, lambda, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE, DOF_matrix=NULL, search)
 {
 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
@@ -304,13 +304,13 @@ CPP_eval.FEM = function(FEM, locations, incidence_matrix, redundancy, ndim, mydi
     barycenters <- as.matrix(bary.locations$barycenters)
   }
 
-  # if (search == 1) { #use Naive search
-  #   print('This is Naive Search')
-  # } else if (search == 2)  { #use Tree search (default)
-  #   print('This is Tree Search')
-  # } else if (search == 3) { #use Walking search
-  #     print('This is Walking Search')
-  # }
+  if (search == 1) { #use Naive search
+    print('This is Naive Search')
+  } else if (search == 2)  { #use Tree search (default)
+    print('This is Tree Search')
+  } else if (search == 3) { #use Walking search
+      print('This is Walking Search')
+  }
 
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))

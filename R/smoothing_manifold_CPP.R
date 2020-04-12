@@ -1,4 +1,4 @@
-CPP_smooth.manifold.FEM.basis<-function(locations, bary.locations, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV,GCVMETHOD = 2, nrealizations = 100, search, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.manifold.FEM.basis<-function(locations, bary.locations, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV, GCVMETHOD = 2, nrealizations = 100, DOF=TRUE, DOF_matrix=NULL, search)
 {
 
   # C++ function for manifold works with vectors not with matrices
@@ -120,11 +120,11 @@ CPP_eval.manifold.FEM = function(FEM, locations, incidence_matrix, redundancy, n
     barycenters <- as.matrix(bary.locations$barycenters)
   }
 
-  # if (search == 1) { #use Naive search
-  #   print('This is Naive Search')
-  # } else if (search == 2)  { #use Tree search (default)
-  #   print('This is Tree Search')
-  # }
+  if (search == 1) { #use Naive search
+    print('This is Naive Search')
+  } else if (search == 2)  { #use Tree search (default)
+    print('This is Tree Search')
+  }
 
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))
