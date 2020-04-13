@@ -211,7 +211,6 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
   }
 
   ################## End checking parameters, sizes and conversion #############################
-
   if(class(FEMbasis$mesh) == 'mesh.2D' & is.null(PDE_parameters)){
 
     bigsol = NULL

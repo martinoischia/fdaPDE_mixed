@@ -148,12 +148,6 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
   if(class(FEM.time) != "FEM.time")
     stop("'FEM.time' is not of class 'FEM.time'")
 
-  #if locations is null but bary.locations is not null, use the locations in bary.locations
-  if(is.null(locations) & !is.null(bary.locations)) {
-    locations = bary.locations$locations
-    locations = as.matrix(locations)
-  }
-
   if (is.null(locations) && is.null(incidence_matrix))
     stop("'locations' OR 'incidence_matrix' required;  both are NULL.")
   if (!is.null(locations) && !is.null(incidence_matrix))
@@ -164,12 +158,8 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
   {
     stop("time locations required; is NULL.")
   }
-  else
-  { # if(!is.null(locations))
-  	if(dim(locations)[1]==dim(FEFEM.timeM$FEMbasis$mesh$nodes)[1] & dim(locations)[2]==dim(FEM.time$FEMbasis$mesh$nodes)[2])
-    warning("The locations matrix has the same dimensions as the mesh nodes. If you want to get the FEM object evaluation
-            at the mesh nodes, use FEM$coeff instead.")
-
+  else # if(!is.null(locations))
+  { 
   	#conversion of search type
   	if(search == "naive" || search == 1)
   	search=1
@@ -189,21 +179,7 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
   	if (search != 1 & search != 2 & search != 3)
   	stop("search must be either tree or naive or walking.")
 
-    #Check the locations in 'bary.locations' and 'locations' are the same
-    if(!is.null(bary.locations) & !is.null(locations))
-    {
-    	flag=TRUE
-    	for (i in 1:nrow(locations)) {
-    		if (!(locations[i,1]==bary.locations$locations[i,1] & locations[i,2] == bary.locations$locations[i,2])) {
-    			flag = FALSE
-    			break
-    		}
-    	}
 
-    	if (flag == FALSE) {
-    		stop("Locations are not same as the one in barycenter information.")
-    	}
-    }  # end of bary.locations  
 
 
     time_locations <- locations[,1]
@@ -224,6 +200,30 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
   }
 
 
+  if(!is.null(bary.locations) & !is.null(locations))
+  {
+	  #Check the locations in 'bary.locations' and 'locations' are the same
+	  flag=TRUE
+	  for (i in 1:nrow(bary.locations$locations)) {
+		  if (!(locations[i,1]==bary.locations$locations[i,1] & locations[i,2] == bary.locations$locations[i,2])) {
+			  flag = FALSE
+			  break
+		  }
+	  }
+
+	  if (flag == FALSE) {
+		stop("Locations are not same as the one in barycenter information.")
+	  }
+
+	
+	#Repeat 'bary.locations' to have the same size as 'locations'
+	time_len = length(FEM.time$mesh_time)
+	bary.locations$locations = matrix( rep( t(bary.locations$locations) , time_len ) , ncol =  ncol(bary.locations$locations) , byrow = TRUE )
+	bary.locations$element_ids = rep(bary.locations$element_ids, time_len)
+	bary.locations$barycenters = matrix( rep( t(bary.locations$barycenters) , time_len ) , ncol =  ncol(bary.locations$barycenters) , byrow = TRUE )  
+  }  # end of bary.locations  
+
+
   if(dim(FEM.time$coeff)[2]>1||dim(FEM.time$coeff)[3]>1)
   {
     if(dim(FEM.time$coeff)[2]>1 && lambdaS==1)
@@ -238,7 +238,6 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
 
 
 res <- NULL
-
   if(class(FEM.time$FEMbasis$mesh)=='mesh.2D'){
     ndim = 2
     mydim = 2
