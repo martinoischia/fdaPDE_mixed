@@ -32,6 +32,8 @@ z<-function(p)
   (a1*sin(2*pi*p[,1])*cos(2*pi*p[,2])+a2*sin(3*pi*p[,1]))*cos(p[,3])
   
 }
+
+
 NumTimePoints=11
 TimePoints=seq(0,2,length.out = NumTimePoints)
 # Exact solution (pointwise at nodes)
@@ -39,18 +41,13 @@ SpacePoints=mesh$nodes
 SpaceTimePoints=cbind(rep(mesh$nodes[,1],NumTimePoints),rep(mesh$nodes[,2],NumTimePoints),rep(TimePoints,each=nrow(mesh$nodes)))
 
 sol_exact=z(SpaceTimePoints)
-
-ran=range(sol_exact) 
-
-#image(FEM(sol_exact, FEMbasis))
-
 # Set smoothing parameter
 
-lambdaS = 1e-3
-lambdaT = 1e-3
+lambdaS = 1e-2
+lambdaT = 1e-2
 GCVFLAG=T
 
-data = sol_exact + rnorm(length(sol_exact), mean=0, sd=0.05*(ran[2]-ran[1]))
+data = sol_exact + rnorm(length(sol_exact), mean=0, sd=0.05*(diff(range(sol_exact))))
 observations=matrix(data,nrow(SpacePoints),NumTimePoints)
 
 output_CPP<-smooth.FEM.time(time_mesh = TimePoints, observations=observations, FEMbasis=FEMbasis, lambdaS=lambdaS,
@@ -58,6 +55,14 @@ output_CPP<-smooth.FEM.time(time_mesh = TimePoints, observations=observations, F
 
 image.FEM.time(output_CPP$fit.FEM.time,1)
 #plot.FEM.time(output_CPP$fit.FEM.time,1)
+
+xeval=runif(1000,0,1)
+yeval=runif(1000,0,1)
+teval=runif(1000,0,2)
+sol_eval=eval.FEM.time(output_CPP$fit.FEM.time,space.time.locations = cbind(teval,xeval,yeval))
+sol_exact=z(cbind(xeval,yeval,teval))
+RMSE<-function(f,g) sqrt(mean((f-g)^2))
+RMSE(sol_eval,sol_exact)
 
 #### simple mesh 2D (elliptic PDE, separable problem with identity penalization, covariates, 
 #### spatial locations different from mesh nodes,temporal locations different from time mesh nodes) ####
@@ -146,9 +151,13 @@ Sol = smooth.FEM.time(locations = SpacePoints, observations = observations,
                       time_mesh=time_mesh, FEMbasis = FEMbasis, FLAG_PARABOLIC = TRUE,
                       lambdaS = lambdaS, lambdaT = lambdaT, BC = BC, 
                       GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG )
-image(Sol$fit.FEM.time,1)  
 
+image(Sol$fit.FEM.time,1)  
 plot(Sol$fit.FEM.time,1)
+
+sol_eval=eval.FEM.time(Sol$fit.FEM.time,locations = SpacePoints, time.istants=time_mesh )
+RMSE<-function(f,g) sqrt(mean((f-g)^2))
+RMSE(sol_eval,DatiEsatti)
 
 
 ###### C mesh : parabolic problem (initial condition known) with GCV computation
@@ -227,16 +236,26 @@ image.FEM.time(solution$fit.FEM.time,1,lambdaS = solution$bestlambda[1],lambdaT 
 plot.FEM.time(solution$fit.FEM.time,1,lambdaS =  solution$bestlambda[1],lambdaT = solution$bestlambda[2])
 
 
-####### 2.5D #######
+# Create finer evaluation points
+meshr=refine.mesh.2D(mesh,30,0.015)
+evaluatePoints_space=meshr$nodes[which(meshr$nodesmarkers==0),]
+evaluatePoints_time=seq(0,pi,length.out = 41)
+evaluatePoints=cbind(rep(evaluatePoints_space[,1],length(evaluatePoints_time)),rep(evaluatePoints_space[,2],length(evaluatePoints_time)),rep(evaluatePoints_time,each=nrow(evaluatePoints_space)))
+sol_exact=f(evaluatePoints[,1],evaluatePoints[,2],evaluatePoints[,3])
+sol_eval=eval.FEM.time(solution$fit.FEM.time,locations = evaluatePoints_space, time.istants=evaluatePoints_time, lambdaS = solution$bestlambda[1],lambdaT = solution$bestlambda[2])
+RMSE<-function(f,g) sqrt(mean((f-g)^2))
+RMSE(sol_eval,sol_exact)
 
-#### hub (covariates) ####
+################################# 
+######### 2.5D problems #########
+#################################
+
+#### hub pointwise (examples with and without covariates) ####
 
 rm(list=ls())
 
 data(hub25Ddata)
-
 mesh <- create.mesh.2.5D(nodes = nodes,triangles = triangles)
-
 FEMbasis <- create.FEM.basis(mesh)
 
 # Locations at nodes
@@ -294,31 +313,38 @@ datacov=func_evaluation+ W%*%beta_exact +rnorm(nnodes,mean=0,sd=0.05*(ran[2]-ran
 
 data = matrix(data,mesh$nnodes,length(TimeNodes))
 datacov = matrix(datacov,mesh$nnodes,length(TimeNodes))
+
 #########################################SEPARABLE####################################################
-solSep = smooth.FEM.time(locations=nodesLocations,observations = data,time_mesh = TimeNodes,
+solSep = smooth.FEM.time(locations=NULL,observations = data,time_mesh = TimeNodes,
                          FEMbasis = FEMbasis, lambdaS = lambdaS, lambdaT = lambdaT, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = F,nrealizations = 100,
                          GCVmethod = GCVMETHODFLAG)
 
 
-solSepCov = smooth.FEM.time(locations=nodesLocations,observations = datacov,time_mesh = TimeNodes, covariates = W,
+solSepCov = smooth.FEM.time(locations=NULL,observations = datacov,time_mesh = TimeNodes, covariates = W,
                             FEMbasis = FEMbasis, lambdaS = lambdaS, lambdaT = lambdaT, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC =F, nrealizations = 100,
                             GCVmethod = GCVMETHODFLAG)
 
 ##########################################PARABOLIC####################################################
-solPar = smooth.FEM.time(locations=nodesLocations,observations = data,time_mesh = TimeNodes,
+solPar = smooth.FEM.time(locations=NULL,observations = data,time_mesh = TimeNodes,
                          FEMbasis = FEMbasis, lambdaS = lambdaS_par, lambdaT = lambdaT_par, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = T,nrealizations = 100,
                          GCVmethod = GCVMETHODFLAG)
 
-solPar = smooth.FEM.time(locations=nodesLocations,observations = datacov[,2:length(TimeNodes)],time_mesh = TimeNodes, covariates = W[(1+mesh$nnodes):(length(TimeNodes)*mesh$nnodes),],
+solParCov = smooth.FEM.time(locations=NULL,observations = datacov[,2:length(TimeNodes)],time_mesh = TimeNodes, covariates = W[(1+mesh$nnodes):(length(TimeNodes)*mesh$nnodes),],
                          FEMbasis = FEMbasis, lambdaS = lambdaS_par, lambdaT = lambdaT_par, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = T, nrealizations = 100,
                          IC=func_evaluation[1:mesh$nnodes],GCVmethod = GCVMETHODFLAG)
 
 
+# Example of RMSE computation
+TimeNodesEval=seq(0,4,length.out = 9)
+eval_locations = cbind(rep(TimeNodesEval,each=nnodes),rep(nodesLocations[,1],length(TimeNodesEval)),rep(nodesLocations[,2],length(TimeNodesEval)),rep(nodesLocations[,3],length(TimeNodesEval)))
+sol_eval=eval.FEM.time(solSep$fit.FEM.time,locations = nodesLocations,time.istants = TimeNodesEval, lambdaS = solSep$bestlambda[1],lambdaT = solSep$bestlambda[2])
+sol_exact = func(eval_locations)
+RMSE<-function(f,g) sqrt(mean((f-g)^2))
+RMSE(sol_eval,sol_exact)
 
 
-####### 2.5D #######
 
-#### hub (covariates) areal####
+#### hub areal (examples with and without covariates) ####
 rm(list=ls())
 
 data(hub25DarealData)
@@ -389,10 +415,11 @@ solPar = smooth.FEM.time(observations = datacov[,2:length(TimeNodes)],time_mesh 
                          IC=func_evaluation[1:mesh$nnodes],GCVmethod = GCVMETHODFLAG)
 
 
+############################################################# 
+######### 3D problems (These tests are slow!) #########
+#############################################################
 
-####### 3D ########
-
-#### sphere 3D (covariates + locations not at nodes + stochastic GCV) ####
+#### sphere 3D pointwise (with or without covariates + locations at nodes or not + stochastic GCV) ####
 
 rm(list=ls())
 
@@ -470,6 +497,7 @@ lambdaT_par2=10^seq(1.4, 1.8, 0.1)
 GCVFLAG=T
 GCVMETHODFLAG='Stochastic'
 
+beta_exact= c(0.7,2.0)
 ran = range(func_evaluation)
 data = func_evaluation +rnorm(nrow(Locations),mean=0,sd=0.05*(ran[2]-ran[1]))
 
@@ -484,7 +512,7 @@ data_noloc = matrix(data_noloc,nloc,length(timeloc))
 datacov = matrix(datacov,nnodes,length(TimeLocations))
 ###########################SEPARABLE###########################################
 
-solSep = smooth.FEM.time(locations=nodesLocations,observations = data,time_mesh = TimeLocations,
+solSep = smooth.FEM.time(locations=NULL,observations = data,time_mesh = TimeLocations,
                          FEMbasis = FEMbasis, lambdaS = lambdaS, lambdaT = lambdaT, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = F,nrealizations = 100,
                          GCVmethod = GCVMETHODFLAG)
 
@@ -492,12 +520,12 @@ solSepNoNodes = smooth.FEM.time(locations=loc[1:nloc,2:4],observations = data_no
                                 FEMbasis = FEMbasis, lambdaS = lambdaS2, lambdaT = lambdaT2, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = F,nrealizations = 100,
                                 GCVmethod = GCVMETHODFLAG)
 
-solSepCov = smooth.FEM.time(locations=nodesLocations,observations = datacov,time_mesh = TimeLocations, covariates = W,
+solSepCov = smooth.FEM.time(locations=NULL,observations = datacov,time_mesh = TimeLocations, covariates = W,
                             FEMbasis = FEMbasis, lambdaS = lambdaS, lambdaT = lambdaT, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC =F, nrealizations = 100,
                             GCVmethod = GCVMETHODFLAG)
 
 ##########################################PARABOLIC####################################################
-solPar = smooth.FEM.time(locations=nodesLocations,observations = data,time_mesh = TimeLocations,
+solPar = smooth.FEM.time(locations=NULL,observations = data,time_mesh = TimeLocations,
                          FEMbasis = FEMbasis, lambdaS = lambdaS_par, lambdaT = lambdaT_par, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = T,nrealizations = 100,
                          GCVmethod = GCVMETHODFLAG)
 
@@ -505,16 +533,19 @@ solParNoNodes = smooth.FEM.time(locations=loc[1:nloc,2:4],observations = data_no
                                 FEMbasis = FEMbasis, lambdaS = lambdaS_par2, lambdaT = lambdaT_par2, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = T,nrealizations = 100,
                                 GCVmethod = GCVMETHODFLAG)
 
-solParCov = fdaPDEtime::smooth.FEM.time(locations=nodesLocations,observations = datacov[,2:length(TimeLocations)],time_mesh = TimeLocations, covariates = W[(1+nnodes):(length(TimeLocations)*nnodes),],
+solParCov = fdaPDEtime::smooth.FEM.time(locations=NULL,observations = datacov[,2:length(TimeLocations)],time_mesh = TimeLocations, covariates = W[(1+nnodes):(length(TimeLocations)*nnodes),],
                                         FEMbasis = FEMbasis, lambdaS = lambdaS_par, lambdaT = lambdaT_par, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = T, nrealizations = 100,
                                         IC=func_evaluation[1:nnodes],GCVmethod = GCVMETHODFLAG)
 
+#### Example of RMSE computation
+
+sol_eval=eval.FEM.time(solParNoNodes$fit.FEM.time,locations = loc[1:nloc,2:4], time.istants = timeloc, lambdaS = solParNoNodes$bestlambda[1],lambdaT = solParNoNodes$bestlambda[2])
+sol_exact = func_evaluation2
+RMSE<-function(f,g) sqrt(mean((f-g)^2))
+RMSE(sol_eval,sol_exact)
 
 
-
-####### 3D ########
-
-#### sphere 3D areal (covariates + stochastic GCV) ####
+#### sphere 3D areal (with or without covariates + stochastic GCV) ####
 
 rm(list=ls())
 
