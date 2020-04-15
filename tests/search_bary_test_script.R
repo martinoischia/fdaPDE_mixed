@@ -2,13 +2,14 @@
 rm(list=ls())
 library(fdaPDE)
 
-
 GCVFLAG=TRUE
 GCVMETHODFLAG='Stochastic'
 
-# load C-shaped mesh
-load("meshC.RData")
-attr(mesh,"class")<-"mesh.2D"
+data(peak2Ddata)
+mesh <- create.mesh.2D(nodes, order=2)
+
+# x11()
+# plot(mesh)
 
 # Create the FEM basis object
 FEMbasis = create.FEM.basis(mesh)
@@ -74,6 +75,7 @@ output_CPP1 = smooth.FEM(observations = data,
                          lambda = lambda,
                          GCV=GCVFLAG,
                          GCVmethod = GCVMETHODFLAG)
+output_CPP1$fit.FEM$FEMbasis = FEMbasis #for now, don't use tree info
 
 #tree search (default)
 points1=eval.FEM(output_CPP1$fit.FEM,
@@ -243,9 +245,8 @@ rm(list=ls())
 GCVFLAG=TRUE
 GCVMETHODFLAG='Stochastic' # Stochastic GCV (default option)
 
-vertices <- read.table("Sfera_2_5D_vertici.txt", quote="\"", comment.char="")
-triangles <- read.table("Sfera_2_5D_triangoli.txt", quote="\"", comment.char="")
-mesh <- create.mesh.2.5D(nodes = vertices[,1:3], triangles = triangles[,1:3])
+data(hub25Ddata)
+mesh <- create.mesh.2.5D(nodes = nodes,triangles = triangles)
 
 # Creat FEMbasis object
 FEMbasis <- create.FEM.basis(mesh)
@@ -267,8 +268,12 @@ fem.test = FEM(func_evaluation, FEMbasis)
 
 
 # Create observations for locations
-load("DataProjected_sphere.RData")
-loc = data_projected
+x <- seq(-3,3,by=0.6)
+y <- seq(-3,3,by=0.6)
+z <- seq(-3,3,by=0.6)
+grid = expand.grid(x=x, y=y, z=z)
+loc = points.projection.2.5D(mesh, grid)
+
 npoints = dim(loc)[1]
 a1 = rnorm(1,mean = 1, sd = 1)
 a2 = rnorm(1,mean = 1, sd = 1)
@@ -289,6 +294,7 @@ output_CPP1 =smooth.FEM(observations = func_evaluation,
                         lambda = lambda, 
                         GCV = GCVFLAG, 
                         GCVmethod = GCVMETHODFLAG)
+output_CPP1$fit.FEM$FEMbasis = FEMbasis #for now, don't use tree info
 
 #tree search (default)
 points1=eval.FEM(output_CPP1$fit.FEM,
@@ -567,6 +573,7 @@ output_CPP1 =smooth.FEM(observations = func_evaluation,
                         lambda = lambda,
                         GCV=GCVFLAG,
                         GCVmethod = GCVMETHODFLAG)
+output_CPP1$fit.FEM$FEMbasis = FEMbasis #for now, don't use tree info
 
 #tree search (default)
 points1=eval.FEM(output_CPP1$fit.FEM,
