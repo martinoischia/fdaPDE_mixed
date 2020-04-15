@@ -141,25 +141,41 @@ eval.FEM <- function(FEM, locations = NULL, incidence_matrix = NULL, search = "t
 #'  Devillers, O. et al. 2001. Walking in a Triangulation, Proceedings of the Seventeenth Annual Symposium on Computational Geometry
 #' @export
 
-eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1,lambdaT=1, search = "tree", bary.locations=NULL)
+eval.FEM.time <- function(FEM.time, locations=NULL, time.istants=NULL, space.time.locations=NULL, incidence_matrix = NULL,lambdaS=1,lambdaT=1, search = "tree", bary.space.time.locations=NULL)
 {
   if (is.null(FEM.time))
     stop("FEM.time required;  is NULL.")
   if(class(FEM.time) != "FEM.time")
     stop("'FEM.time' is not of class 'FEM.time'")
 
-  if (is.null(locations) && is.null(incidence_matrix))
-    stop("'locations' OR 'incidence_matrix' required;  both are NULL.")
-  if (!is.null(locations) && !is.null(incidence_matrix))
-    if(dim(locations)[2]!=1)
-      stop("spatial locations NOR 'incidence_matrix' required; both are given.")
+  if((!is.null(locations) && is.null(time.istants))||(is.null(locations) && !is.null(time.istants)))
+    stop(" 'locations' and 'time.istants' must both be given or both NULL")
 
-  if (is.null(locations))
+  if(is.null(locations) && is.null(space.time.locations))
+    stop("'space.time.locations' OR 'locations' and time.istants' required;  all of them are NULL.")
+
+  if(!is.null(locations) && !is.null(space.time.locations))
+    stop("'space.time.locations' NOR 'locations' and time.istants' required;  both are given.")
+
+  if(is.null(space.time.locations))
   {
-    stop("time locations required; is NULL.")
+    space.time.locations=cbind(rep(time.istants,each=nrow(locations)),rep(locations[,1],length(time.istants)),rep(locations[,2],length(time.istants)))
+    if(ncol(locations)==3)
+    space.time.locations=cbind(space.time.locations,rep(locations[,3],length(time.istants)))
   }
-  else # if(!is.null(locations))
-  { 
+
+  if (is.null(space.time.locations) && is.null(incidence_matrix))
+    stop("'space.time.locations' OR 'incidence_matrix' required;  both are NULL.")
+  if (!is.null(space.time.locations) && !is.null(incidence_matrix))
+    if(dim(space.time.locations)[2]!=1)
+      stop("spatial space.time.locations NOR 'incidence_matrix' required; both are given.")
+
+  if (is.null(space.time.locations))
+  {
+    stop("time space.time.locations required; is NULL.")
+  }
+  else # if(!is.null(space.time.locations))
+  {
   	#conversion of search type
   	if(search == "naive" || search == 1)
   	search=1
@@ -182,30 +198,30 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
 
 
 
-    time_locations <- locations[,1]
+    time_locations <- space.time.locations[,1]
     if(is.null(incidence_matrix))
     {
-      if(dim(locations)[2]<3)
-        stop("'locations' requires at least t,X,Y")
-      if(dim(locations)[1]==dim(FEM.time$FEMbasis$mesh$nodes)[1] & (dim(locations)[2]-1)==dim(FEM.time$FEMbasis$mesh$nodes)[2])
-        warning("The locations matrix has the same dimensions as the mesh nodes. If you want to get the FEM.time object evaluation
+      if(dim(space.time.locations)[2]<3)
+        stop("'space.time.locations' requires at least t,X,Y")
+      if(dim(space.time.locations)[1]==dim(FEM.time$FEMbasis$mesh$nodes)[1] & (dim(space.time.locations)[2]-1)==dim(FEM.time$FEMbasis$mesh$nodes)[2])
+        warning("The space.time.locations matrix has the same dimensions as the mesh nodes. If you want to get the FEM.time object evaluation
               at the mesh nodes, use FEM.time$coeff instead")
-      locations <- locations[,2:dim(locations)[2]]
+      space.time.locations <- space.time.locations[,2:dim(space.time.locations)[2]]
       incidence_matrix <- matrix(nrow = 0, ncol = 1)
     }
     else
     {
-      locations <- matrix(nrow=0, ncol=1)
+      space.time.locations <- matrix(nrow=0, ncol=1)
     }
   }
 
 
-  if(!is.null(bary.locations) & !is.null(locations))
+  if(!is.null(bary.space.time.locations) & !is.null(space.time.locations))
   {
-	  #Check the locations in 'bary.locations' and 'locations' are the same
+	  #Check the space.time.locations in 'bary.space.time.locations' and 'space.time.locations' are the same
 	  flag=TRUE
-	  for (i in 1:nrow(bary.locations$locations)) {
-		  if (!(locations[i,1]==bary.locations$locations[i,1] & locations[i,2] == bary.locations$locations[i,2])) {
+	  for (i in 1:nrow(bary.space.time.locations$space.time.locations)) {
+		  if (!(space.time.locations[i,1]==bary.space.time.locations$space.time.locations[i,1] & space.time.locations[i,2] == bary.space.time.locations$space.time.locations[i,2])) {
 			  flag = FALSE
 			  break
 		  }
@@ -215,13 +231,13 @@ eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1
 		stop("Locations are not same as the one in barycenter information.")
 	  }
 
-	
-	#Repeat 'bary.locations' to have the same size as 'locations'
+
+	#Repeat 'bary.space.time.locations' to have the same size as 'space.time.locations'
 	time_len = length(FEM.time$mesh_time)
-	bary.locations$locations = matrix( rep( t(bary.locations$locations) , time_len ) , ncol =  ncol(bary.locations$locations) , byrow = TRUE )
-	bary.locations$element_ids = rep(bary.locations$element_ids, time_len)
-	bary.locations$barycenters = matrix( rep( t(bary.locations$barycenters) , time_len ) , ncol =  ncol(bary.locations$barycenters) , byrow = TRUE )  
-  }  # end of bary.locations  
+	bary.space.time.locations$space.time.locations = matrix( rep( t(bary.space.time.locations$space.time.locations) , time_len ) , ncol =  ncol(bary.space.time.locations$space.time.locations) , byrow = TRUE )
+	bary.space.time.locations$element_ids = rep(bary.space.time.locations$element_ids, time_len)
+	bary.space.time.locations$barycenters = matrix( rep( t(bary.space.time.locations$barycenters) , time_len ) , ncol =  ncol(bary.space.time.locations$barycenters) , byrow = TRUE )
+  }  # end of bary.space.time.locations
 
 
   if(dim(FEM.time$coeff)[2]>1||dim(FEM.time$coeff)[3]>1)
@@ -241,15 +257,15 @@ res <- NULL
   if(class(FEM.time$FEMbasis$mesh)=='mesh.2D'){
     ndim = 2
     mydim = 2
-    res = CPP_eval.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search, bary.locations)
+    res = CPP_eval.FEM.time(f, space.time.locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search, bary.space.time.locations)
   }else if(class(FEM.time$FEMbasis$mesh)=='mesh.2.5D'){
     ndim = 3
     mydim = 2
-    res = CPP_eval.manifold.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search, bary.locations)
+    res = CPP_eval.manifold.FEM.time(f, space.time.locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search, bary.space.time.locations)
   }else if(class(FEM.time$FEMbasis$mesh)=='mesh.3D'){
     ndim = 3
     mydim = 3
-    res = CPP_eval.volume.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search, bary.locations)
+    res = CPP_eval.volume.FEM.time(f, space.time.locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim, search, bary.space.time.locations)
   }
 
   return(as.matrix(res))
