@@ -125,7 +125,7 @@ output_CPP$beta
 #### charotid 2D (Parabolic problem (initial condition automatically estimated) + Boundary Conditions) ####
 
 rm(list=ls())
-
+library(fdaPDE)
 data(charotid2Ddata)
 
 plot(mesh)
@@ -155,7 +155,9 @@ Sol = smooth.FEM.time(locations = SpacePoints, observations = observations,
 image(Sol$fit.FEM.time,1)  
 plot(Sol$fit.FEM.time,1)
 
-sol_eval=eval.FEM.time(Sol$fit.FEM.time,locations = SpacePoints, time.istants=time_mesh )
+sol_eval=eval.FEM.time(Sol$fit.FEM.time,
+                       locations = SpacePoints, 
+                       time.instants=time_mesh )
 RMSE<-function(f,g) sqrt(mean((f-g)^2))
 RMSE(sol_eval,DatiEsatti)
 
@@ -242,7 +244,7 @@ evaluatePoints_space=meshr$nodes[which(meshr$nodesmarkers==0),]
 evaluatePoints_time=seq(0,pi,length.out = 41)
 evaluatePoints=cbind(rep(evaluatePoints_space[,1],length(evaluatePoints_time)),rep(evaluatePoints_space[,2],length(evaluatePoints_time)),rep(evaluatePoints_time,each=nrow(evaluatePoints_space)))
 sol_exact=f(evaluatePoints[,1],evaluatePoints[,2],evaluatePoints[,3])
-sol_eval=eval.FEM.time(solution$fit.FEM.time,locations = evaluatePoints_space, time.istants=evaluatePoints_time, lambdaS = solution$bestlambda[1],lambdaT = solution$bestlambda[2])
+sol_eval=eval.FEM.time(solution$fit.FEM.time,locations = evaluatePoints_space, time.instants=evaluatePoints_time, lambdaS = solution$bestlambda[1],lambdaT = solution$bestlambda[2])
 RMSE<-function(f,g) sqrt(mean((f-g)^2))
 RMSE(sol_eval,sol_exact)
 
@@ -337,7 +339,7 @@ solParCov = smooth.FEM.time(locations=NULL,observations = datacov[,2:length(Time
 # Example of RMSE computation
 TimeNodesEval=seq(0,4,length.out = 9)
 eval_locations = cbind(rep(TimeNodesEval,each=nnodes),rep(nodesLocations[,1],length(TimeNodesEval)),rep(nodesLocations[,2],length(TimeNodesEval)),rep(nodesLocations[,3],length(TimeNodesEval)))
-sol_eval=eval.FEM.time(solSep$fit.FEM.time,locations = nodesLocations,time.istants = TimeNodesEval, lambdaS = solSep$bestlambda[1],lambdaT = solSep$bestlambda[2])
+sol_eval=eval.FEM.time(solSep$fit.FEM.time,locations = nodesLocations,time.instants = TimeNodesEval, lambdaS = solSep$bestlambda[1],lambdaT = solSep$bestlambda[2])
 sol_exact = func(eval_locations)
 RMSE<-function(f,g) sqrt(mean((f-g)^2))
 RMSE(sol_eval,sol_exact)
@@ -539,7 +541,7 @@ solParCov = fdaPDEtime::smooth.FEM.time(locations=NULL,observations = datacov[,2
 
 #### Example of RMSE computation
 
-sol_eval=eval.FEM.time(solParNoNodes$fit.FEM.time,locations = loc[1:nloc,2:4], time.istants = timeloc, lambdaS = solParNoNodes$bestlambda[1],lambdaT = solParNoNodes$bestlambda[2])
+sol_eval=eval.FEM.time(solParNoNodes$fit.FEM.time,locations = loc[1:nloc,2:4], time.instants = timeloc, lambdaS = solParNoNodes$bestlambda[1],lambdaT = solParNoNodes$bestlambda[2])
 sol_exact = func_evaluation2
 RMSE<-function(f,g) sqrt(mean((f-g)^2))
 RMSE(sol_eval,sol_exact)
