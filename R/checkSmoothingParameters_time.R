@@ -167,7 +167,7 @@ checkSmoothingParametersSize_time<-function(locations = NULL, time_locations=NUL
   if(is.null(locations) && is.null(incidence_matrix))
   {
     if(!is.null(time_locations))
-      if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || ncol(observations) != nrow(time_locations))
+      if(ifelse(class(FEMbasis$mesh) == "mesh.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || ncol(observations) != nrow(time_locations))
         stop("'locations' and 'observations' have incompatible size;")
 
     if(is.null(time_locations))
