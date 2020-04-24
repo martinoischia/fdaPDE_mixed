@@ -16,6 +16,14 @@
 #include "mixedFERegression.h"
 #include "mixedFEFPCAfactory.h"
 
+//Density Estimation
+#include "DataProblem.h"
+#include "FunctionalProblem.h"
+#include "OptimizationAlgorithm.h"
+#include "OptimizationAlgorithm_factory.h"
+#include "FEDensityEstimation.h"
+
+
 template<typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
 SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh)
 {
@@ -396,6 +404,116 @@ SEXP FPCA_skeleton(FPCAData &fPCAData, SEXP Rmesh, std::string validation)
 	int *rans12 = INTEGER(VECTOR_ELT(result, 12));
 	for(UInt i = 0; i < elementIds.rows(); i++)
 		rans12[i] = elementIds(i);
+
+	UNPROTECT(1);
+
+	return(result);
+}
+
+
+template<typename Integrator, typename Integrator_noPoly, UInt ORDER, UInt mydim, UInt ndim>
+SEXP DE_skeleton(SEXP Rdata, SEXP Rorder, SEXP Rfvec, SEXP RheatStep, SEXP RheatIter, SEXP Rlambda, SEXP Rnfolds, SEXP Rnsim, SEXP RstepProposals,
+	SEXP Rtol1, SEXP Rtol2, SEXP Rprint, SEXP Rmesh, SEXP Rsearch,
+	const std::string & step_method, const std::string & direction_method, const std::string & preprocess_method)
+{
+	// Construct data problem object
+	DataProblem<Integrator, Integrator_noPoly, ORDER, mydim, ndim> dataProblem(Rdata, Rorder, Rfvec, RheatStep, RheatIter, Rlambda, Rnfolds, Rnsim, RstepProposals, Rtol1, Rtol2, Rprint, Rsearch, Rmesh);
+
+	// Construct functional problem object
+	FunctionalProblem<Integrator, Integrator_noPoly, ORDER, mydim, ndim> functionalProblem(dataProblem);
+
+	// Construct minimization algorithm object
+	std::shared_ptr<MinimizationAlgorithm<Integrator, Integrator_noPoly, ORDER, mydim, ndim>> minimizationAlgo =
+		MinimizationAlgorithm_factory<Integrator, Integrator_noPoly, ORDER, mydim, ndim>::createStepSolver(dataProblem, functionalProblem, direction_method, step_method);
+
+	// Construct FEDE object
+	FEDE<Integrator, Integrator_noPoly, ORDER, mydim, ndim> fede(dataProblem, functionalProblem, minimizationAlgo, preprocess_method);
+
+  // Perform the whole task
+	fede.apply();
+
+	// Collect results
+	VectorXr g_sol = fede.getDensity_g();
+	std::vector<const VectorXr*> f_init = fede.getInitialDensity();
+	Real lambda_sol = fede.getBestLambda();
+	std::vector<Real> CV_errors = fede.getCvError();
+
+	std::vector<Point> data = dataProblem.getData();
+
+	// Copy result in R memory
+	SEXP result = NILSXP;
+	result = PROTECT(Rf_allocVector(VECSXP, 5 + 5));
+	SET_VECTOR_ELT(result, 0, Rf_allocVector(REALSXP, g_sol.size()));
+	SET_VECTOR_ELT(result, 1, Rf_allocMatrix(REALSXP, (*(f_init[0])).size(), f_init.size()));
+	SET_VECTOR_ELT(result, 2, Rf_allocVector(REALSXP, 1));
+	SET_VECTOR_ELT(result, 3, Rf_allocMatrix(REALSXP, data.size(), ndim));
+	SET_VECTOR_ELT(result, 4, Rf_allocVector(REALSXP, CV_errors.size()));
+
+
+	Real *rans = REAL(VECTOR_ELT(result, 0));
+	for(UInt i = 0; i < g_sol.size(); i++)
+	{
+		rans[i] = g_sol[i];
+	}
+
+	Real *rans1 = REAL(VECTOR_ELT(result, 1));
+	for(UInt j = 0; j < f_init.size(); j++)
+	{
+		for(UInt i = 0; i < (*(f_init[0])).size(); i++)
+			rans1[i + (*(f_init[0])).size()*j] = (*(f_init[j]))[i];
+	}
+
+	Real *rans2 = REAL(VECTOR_ELT(result, 2));
+	rans2[0] = lambda_sol;
+
+	Real *rans3 = REAL(VECTOR_ELT(result, 3));
+	for(UInt j = 0; j < ndim; j++)
+	{
+		for(UInt i = 0; i < data.size(); i++)
+			rans3[i + data.size()*j] = data[i][j];
+	}
+
+	Real *rans4 = REAL(VECTOR_ELT(result, 4));
+	for(UInt i = 0; i < CV_errors.size(); i++)
+	{
+		rans4[i] = CV_errors[i];
+	}
+
+	//SEND TREE INFORMATION TO R
+	SET_VECTOR_ELT(result, 5, Rf_allocVector(INTSXP, 1)); //tree_header information
+	int *rans5 = INTEGER(VECTOR_ELT(result, 5));
+	rans5[0] = dataProblem.getMesh().getTree().gettreeheader().gettreelev();
+
+	SET_VECTOR_ELT(result, 6, Rf_allocVector(REALSXP, ndim*2)); //tree_header domain origin
+	Real *rans6 = REAL(VECTOR_ELT(result, 6));
+	for(UInt i = 0; i < ndim*2; i++)
+		rans6[i] = dataProblem.getMesh().getTree().gettreeheader().domainorig(i);
+
+	SET_VECTOR_ELT(result, 7, Rf_allocVector(REALSXP, ndim*2)); //tree_header domain scale
+	Real *rans7 = REAL(VECTOR_ELT(result, 7));
+	for(UInt i = 0; i < ndim*2; i++)
+		rans7[i] = dataProblem.getMesh().getTree().gettreeheader().domainscal(i);
+
+
+	UInt num_tree_nodes = dataProblem.getMesh().num_elements()+1; //Be careful! This is not equal to number of elements
+	SET_VECTOR_ELT(result, 8, Rf_allocMatrix(INTSXP, num_tree_nodes, 3)); //treenode information
+	int *rans8 = INTEGER(VECTOR_ELT(result, 8));
+	for(UInt i = 0; i < num_tree_nodes; i++)
+			rans8[i] = dataProblem.getMesh().getTree().gettreenode(i).getid();
+
+	for(UInt i = 0; i < num_tree_nodes; i++)
+			rans8[i + num_tree_nodes*1] = dataProblem.getMesh().getTree().gettreenode(i).getchild(0);
+
+	for(UInt i = 0; i < num_tree_nodes; i++)
+			rans8[i + num_tree_nodes*2] = dataProblem.getMesh().getTree().gettreenode(i).getchild(1);
+
+	SET_VECTOR_ELT(result, 9, Rf_allocMatrix(REALSXP, num_tree_nodes, ndim*2)); //treenode box coordinate
+	Real *rans9 = REAL(VECTOR_ELT(result, 9));
+	for(UInt j = 0; j < ndim*2; j++)
+	{
+		for(UInt i = 0; i < num_tree_nodes; i++)
+			rans9[i + num_tree_nodes*j] = dataProblem.getMesh().getTree().gettreenode(i).getbox().get()[j];
+	}
 
 	UNPROTECT(1);
 
@@ -901,5 +1019,61 @@ SEXP Smooth_FPCA(SEXP Rlocations, SEXP RbaryLocations, SEXP Rdatamatrix, SEXP Rm
 		return(FPCA_skeleton<IntegratorTetrahedronP2, 1, 3, 3>(fPCAdata, Rmesh, validation));
 	return(NILSXP);
 	 }
+
+
+	 // Density estimation (interface with R)
+
+//! This function manages the various options for DE-PDE algorithm
+/*!
+	This function is than called from R code.
+	\param Rdata an R-matrix containing the data.
+	\param Rmesh an R-object containg the output mesh from Trilibrary
+	\param Rorder an R-integer containing the order of the approximating basis.
+	\param Rmydim an R-integer containing the dimension of the problem we are considering.
+	\param Rndim an R-integer containing the dimension of the space in which the location are.
+	\param Rfvec an R-vector containing the the initial solution coefficients given by the user.
+	\param RheatStep an R-double containing the step for the heat equation initialization.
+	\para, RheatIter an R-integer containing the number of iterations to perfrom the heat equation initialization.
+	\param Rlambda an R-vector containing the penalization terms.
+	\param Rnfolds an R-integer specifying the number of folds for cross validation.
+	\param Rnsim an R-integer specifying the number of iterations to use in the optimization algorithm.
+	\param RstepProposals an R-vector containing the step parameters useful for the descent algotihm.
+	\param Rtol1 an R-double specifying the tolerance to use for the termination criterion based on the percentage differences.
+	\param Rtol2 an R-double specifying the tolerance to use for the termination criterion based on the norm of the gradient.
+	\param Rprint and R-integer specifying if print on console.
+	\param RstepMethod an R-string containing the method to use to choose the step in the optimization algorithm.
+	\param RdirectionMethod an R-string containing the descent direction to use in the optimization algorithm.
+	\param RpreprocessMethod an R-string containing the cross-validation method to use.
+	\param Rsearch an R-integer to decide the search algorithm type (tree or naive search algorithm).
+
+	\return R-list containg solutions.
+*/
+
+SEXP Density_Estimation(SEXP Rdata, SEXP Rmesh, SEXP Rorder, SEXP Rmydim, SEXP Rndim, SEXP Rfvec, SEXP RheatStep, SEXP RheatIter, SEXP Rlambda,
+	 SEXP Rnfolds, SEXP Rnsim, SEXP RstepProposals, SEXP Rtol1, SEXP Rtol2, SEXP Rprint, SEXP RstepMethod, SEXP RdirectionMethod, SEXP RpreprocessMethod, SEXP Rsearch)
+{
+	UInt order= INTEGER(Rorder)[0];
+  UInt mydim=INTEGER(Rmydim)[0];
+	UInt ndim=INTEGER(Rndim)[0];
+
+	std::string step_method=CHAR(STRING_ELT(RstepMethod, 0));
+	std::string direction_method=CHAR(STRING_ELT(RdirectionMethod, 0));
+	std::string preprocess_method=CHAR(STRING_ELT(RpreprocessMethod, 0));
+
+  if(order== 1 && mydim==2 && ndim==2)
+		return(DE_skeleton<IntegratorTriangleP2, IntegratorGaussTriangle3, 1, 2, 2>(Rdata, Rorder, Rfvec, RheatStep, RheatIter, Rlambda, Rnfolds, Rnsim, RstepProposals, Rtol1, Rtol2, Rprint, Rmesh, Rsearch, step_method, direction_method, preprocess_method));
+	else if(order== 2 && mydim==2 && ndim==2)
+		return(DE_skeleton<IntegratorTriangleP4, IntegratorGaussTriangle3, 2, 2, 2>(Rdata, Rorder, Rfvec, RheatStep, RheatIter, Rlambda, Rnfolds, Rnsim, RstepProposals, Rtol1, Rtol2, Rprint, Rmesh, Rsearch, step_method, direction_method, preprocess_method));
+	else if(order== 1 && mydim==2 && ndim==3)
+		return(DE_skeleton<IntegratorTriangleP2, IntegratorGaussTriangle3, 1, 2, 3>(Rdata, Rorder, Rfvec, RheatStep, RheatIter, Rlambda, Rnfolds, Rnsim, RstepProposals, Rtol1, Rtol2, Rprint, Rmesh, Rsearch, step_method, direction_method, preprocess_method));
+	else if(order== 2 && mydim==2 && ndim==3)
+		return(DE_skeleton<IntegratorTriangleP4, IntegratorGaussTriangle3, 2, 2, 3>(Rdata, Rorder, Rfvec, RheatStep, RheatIter, Rlambda, Rnfolds, Rnsim, RstepProposals, Rtol1, Rtol2, Rprint, Rmesh, Rsearch, step_method, direction_method, preprocess_method));
+	else if(order == 1 && mydim==3 && ndim==3)
+		return(DE_skeleton<IntegratorTetrahedronP2, IntegratorGaussTetra3, 1, 3, 3>(Rdata, Rorder, Rfvec, RheatStep, RheatIter, Rlambda, Rnfolds, Rnsim, RstepProposals, Rtol1, Rtol2, Rprint, Rmesh, Rsearch, step_method, direction_method, preprocess_method));
+	// else if(order == 1 && mydim==3 && ndim==3)
+	// 	return(DE_skeleton<IntegratorTetrahedronP2, IntegratorGaussTetra3, 1, 3, 3>(Rdata, Rorder, Rfvec, RheatStep, RheatIter, Rlambda, Rnfolds, Rnsim, RstepProposals, Rtol1, Rtol2, Rprint, Rmesh, Rsearch, step_method, direction_method, preprocess_method));
+
+	return(NILSXP);
+}
 
 }

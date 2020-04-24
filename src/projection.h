@@ -7,6 +7,20 @@ template <UInt ORDER,UInt mydim, UInt ndim>
 class projection{
 };
 
+template <UInt ORDER>
+class projection<ORDER,2,2>{
+private:
+  MeshHandler<ORDER,2,2> mesh_;
+  const std::vector<Point> & deData_; // the points to be projected
+  UInt num_points;
+
+public:
+  projection(MeshHandler<ORDER,2,2> m, const std::vector<Point> & d): mesh_(m), deData_(d), num_points(d.size()) {};
+
+  std::vector<Point> computeProjection() {return deData_;}
+};
+
+
 template<UInt ORDER>
 class projection<ORDER,2,3>{
 private:
@@ -28,6 +42,21 @@ public:
   std::vector<Point> computeProjection();
 
 };
+
+
+template <UInt ORDER>
+class projection<ORDER,3,3>{
+private:
+  MeshHandler<ORDER,3,3> mesh_;
+  const std::vector<Point> & deData_; // the points to be projected
+  UInt num_points;
+
+public:
+  projection(MeshHandler<ORDER,3,3> m, const std::vector<Point> & d): mesh_(m), deData_(d), num_points(d.size()) {};
+
+  std::vector<Point> computeProjection() {return deData_;}
+};
+
 
 #include "projection_imp.h"
 

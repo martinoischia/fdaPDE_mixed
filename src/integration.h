@@ -66,5 +66,34 @@ class IntegratorTetrahedronP1{
 		static const std::vector<Real> WEIGHTS;
 		};
 
+// Gauss Legendre quadrature rules for triangles (n=3)
+class IntegratorGaussTriangle3{
+	private:
+		static const std::vector<Real> w;
+
+	public:
+		//Number of nodes
+		static const UInt NNODES = 9;
+		//Point locations
+		static const std::vector<Point> NODES;
+		static const VectorXr WEIGHTS;
+};
+
+// Gauss Legendre quadrature rules for tetra (n=3)
+class IntegratorGaussTetra3
+{
+	private:
+		static const std::vector<Real> w;
+
+	public:
+		//Number of nodes
+		static const UInt NNODES = 27;
+		//Point locations
+		static const std::vector<Point> NODES;
+		static const VectorXr WEIGHTS;
+};
+
+
+
 //#include "integration_imp.hpp"
 #endif
