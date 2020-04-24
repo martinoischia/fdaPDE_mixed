@@ -5,7 +5,7 @@
 #' and, if ndim=3, the third column corresponds to the \code{z}-coordinates. 
 #' @param FEMbasis A \code{FEMbasis} object describing the Finite Element basis, as created by \code{\link{create.FEM.basis}}.
 #' @param lambda A scalar or vector of smoothing parameters. If it is a vector, the optimal smoothing parameter is choosen
-#'  with a \code{k}-fold cross-validation procedure based on the L2 norm.
+#' with a \code{k}-fold cross-validation procedure based on the L2 norm.
 #' @param fvec A vector of length #\code{nodes} of the mesh. It corresponds to the node values of the initial density function. 
 #' If this is \code{NULL} the initial density is estimated thanks to a discretized heat diffusion 
 #' process that starts from the empirical density of the data. Default is \code{NULL}.
@@ -44,7 +44,7 @@
 #' @param search An integer specifying the search algorithm to use. It is either 1 (Naive search algorithm) or 2 (Tree search algorithm).
 #' The default is 2.
 #' @return A list with the following variables:
-#' \item{\code{treeFEMbasis}}{}
+#' \item{\code{treeFEMbasis}}{Tree informations.}
 #' \item{\code{g}}{A vector of length #\code{nodes} that represents the value of the g-function estimated for each \code{node} of the mesh.
 #' The density is the exponential of this function.}
 #' \item{\code{f_init}}{A #\code{nodes}-by-#\code{lambda} parameters matrix. Each column contains the node values of the initial
@@ -61,7 +61,6 @@
 #' @usage DE.FEM(data, FEMbasis, lambda, fvec=NULL, heatStep=0.1, heatIter=500, stepProposals=NULL,
 #' tol1=1e-4, tol2=0, print=FALSE, nfolds=NULL, nsimulations=500, step_method, direction_method,
 #'  preprocess_method="NoCrossValidation", search = 2)
-#' @references 
 #' @export
 #' @examples
 #' library(fdaPDE)

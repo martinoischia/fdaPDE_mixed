@@ -156,7 +156,7 @@ DataProblem<Integrator, Integrator_noPoly, ORDER, mydim, ndim>::computePsi(const
 			#else
 			std::cout << "WARNING: The following observation is not in the domain\n";
       #endif
-			(deData_.getDatum(*it)).print(std::cout);
+			//(deData_.getDatum(*it)).print(std::cout);
 		}
     else
     {
