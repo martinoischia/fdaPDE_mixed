@@ -130,7 +130,9 @@ FixedStep<Integrator,Integrator_noPoly,ORDER,mydim,ndim>::apply_core(const SpMat
   #ifdef R_VERSION_
   Rprintf("ERROR: The loss function increases: not good. Try decreasing the optimization parameter");
   #endif
-  std::abort();
+  //std::abort();
+  return VectorXr::Constant(g.size(),0);
+
 }
 
 
