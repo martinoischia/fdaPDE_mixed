@@ -953,7 +953,7 @@ data <- cbind(data_x, data_y)
 # 1) Cross-validation
 lambda = c(0.001, 0.01, 0.1, 1)
 nfolds = 5
-sol <- FEM.density(data = data, FEMbasis = FEMbasis, lambda = lambda, nfolds=nfolds,
+sol <- DE.FEM(data = data, FEMbasis = FEMbasis, lambda = lambda, nfolds=nfolds,
               step_method = "Fixed_Step", direction_method = "BFGS",
               preprocess_method="RightCV")
 sol$lambda
@@ -973,7 +973,7 @@ image2D(x=X, y=Y, z=eval, col=heat.colors(100), xlab="x",ylab="y", contour=list(
 
 # 2) Lambda fixed
 lambda = 0.1
-sol <- FEM.density(data = data, FEMbasis = FEMbasis, lambda = lambda,
+sol <- DE.FEM(data = data, FEMbasis = FEMbasis, lambda = lambda,
               step_method = "Fixed_Step", direction_method = "BFGS",
               preprocess_method="NoCrossValidation")
 
@@ -983,7 +983,7 @@ image(FEM(exp(sol$g), FEMbasis))
 # 3) Cross-validation simplified version
 lambda = c(0.0001, 0.001, 0.01, 0.1, 1)
 nfolds = 5
-sol <- FEM.density(data = data, FEMbasis = FEMbasis, lambda = lambda, nfolds=nfolds,
+sol <- DE.FEM(data = data, FEMbasis = FEMbasis, lambda = lambda, nfolds=nfolds,
               step_method = "Fixed_Step", direction_method = "BFGS",
               preprocess_method="SimplifiedCV")
 sol$lambda
@@ -994,7 +994,7 @@ image(FEM(exp(sol$g), FEMbasis))
 # 4) Initialization given
 lambda = 0.1
 initF = rep(1, nrow(mesh$nodes))
-sol <- FEM.density(data = data, FEMbasis = FEMbasis, lambda = lambda, fvec = initF,
+sol <- DE.FEM(data = data, FEMbasis = FEMbasis, lambda = lambda, fvec = initF,
               step_method = "Fixed_Step", direction_method = "BFGS",
               preprocess_method="NoCrossValidation")
 
@@ -1003,7 +1003,7 @@ image(FEM(exp(sol$g), FEMbasis))
 
 # 5) step_method = Backtracking method
 lambda = 0.1
-sol <- FEM.density(data = data, FEMbasis = FEMbasis, lambda = lambda,
+sol <- DE.FEM(data = data, FEMbasis = FEMbasis, lambda = lambda,
               step_method = "Backtracking_Method", direction_method = "BFGS",
               preprocess_method="NoCrossValidation")
 
@@ -1012,7 +1012,7 @@ image(FEM(exp(sol$g), FEMbasis))
 
 # 6) step_method = Wolfe method
 lambda = 0.1
-sol <- FEM.density(data = data, FEMbasis = FEMbasis, lambda = lambda,
+sol <- DE.FEM(data = data, FEMbasis = FEMbasis, lambda = lambda,
               step_method = "Wolfe_Method", direction_method = "BFGS",
               preprocess_method="NoCrossValidation")
 
@@ -1021,7 +1021,7 @@ image(FEM(exp(sol$g), FEMbasis))
 
 # 7) direction_method = Gradient
 lambda = 0.1
-sol <- FEM.density(data = data, FEMbasis = FEMbasis, lambda = lambda,
+sol <- DE.FEM(data = data, FEMbasis = FEMbasis, lambda = lambda,
               step_method = "Fixed_Step", direction_method = "Gradient",
               preprocess_method="NoCrossValidation")
 
@@ -1030,7 +1030,7 @@ image(FEM(exp(sol$g), FEMbasis))
 
 # 8) Naive search algorithm
 lambda = 0.1
-sol <- FEM.density(data = data, FEMbasis = FEMbasis, lambda = lambda,
+sol <- DE.FEM(data = data, FEMbasis = FEMbasis, lambda = lambda,
               step_method = "Fixed_Step", direction_method = "BFGS",
               preprocess_method="NoCrossValidation", search = 1)
 
@@ -1064,7 +1064,7 @@ image(FEM(exp(sol$g), FEMbasis))
 # 
 # ## Density Estimation:
 # lambda = 0.01
-# sol <- FEM.density(data = data, FEMbasis = FEMbasis, lambda = lambda, fvec=NULL, heatStep=0.1,
+# sol <- DE.FEM(data = data, FEMbasis = FEMbasis, lambda = lambda, fvec=NULL, heatStep=0.1,
 #                    heatIter=500, stepProposals=NULL, tol1=1e-4, tol2=0, print=FALSE, nfolds=NULL, nsimulations=500,
 #                    step_method = "Fixed_Step", direction_method = "BFGS",
 #                    preprocess_method="NoCrossValidation")
@@ -1097,8 +1097,8 @@ data <- cbind(data_x, data_y, data_z)
 nsims = 5
 
 ## Density Estimation:
-lambda = 1e-5
-sol <- FEM.density(data = data, FEMbasis = FEMbasis, lambda = lambda, nsimulations=nsims,
+lambda = 1e-3
+sol <- DE.FEM(data = data, FEMbasis = FEMbasis, lambda = lambda, nsimulations=nsims,
               step_method = "Fixed_Step", direction_method = "BFGS",
               preprocess_method="NoCrossValidation")
 
