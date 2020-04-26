@@ -4,7 +4,7 @@
 \alias{FEM.time}
 \title{Define a spatio-temporal field by a Finite Element basis expansion}
 \usage{
-FEM.time(coeff,mesh_time,FEMbasis,FLAG_PARABOLIC=FALSE)
+FEM.time(coeff,time_mesh,FEMbasis,FLAG_PARABOLIC=FALSE)
 }
 \arguments{
 \item{coeff}{A vector or a matrix containing the coefficients for the spatio-temporal basis expansion. The number of rows

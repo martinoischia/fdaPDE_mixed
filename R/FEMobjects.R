@@ -81,7 +81,7 @@ create.FEM.basis = function(mesh, saveTree = FALSE)
       bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, package = "fdaPDE")
       tree_mesh = list(
       treelev = bigsol[[1]][1],
-      header_orig= bigsol[[2]], 
+      header_orig= bigsol[[2]],
       header_scale = bigsol[[3]],
       node_id = bigsol[[4]][,1],
       node_left_child = bigsol[[4]][,2],
@@ -93,7 +93,7 @@ create.FEM.basis = function(mesh, saveTree = FALSE)
       mesh = append(orig_mesh, tree_mesh)
       class(mesh) = mesh.class
   }
-      
+
   FEMbasis = list(mesh = mesh, order = as.integer(mesh$order), nbasis = nbasis, detJ=eleProp$detJ, transf_coord = eleProp$transf_coord)
   class(FEMbasis) = "FEMbasis"
 
@@ -144,7 +144,7 @@ create.FEM.basis = function(mesh, saveTree = FALSE)
         bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, package = "fdaPDE")
         tree_mesh = list(
         treelev = bigsol[[1]][1],
-        header_orig= bigsol[[2]], 
+        header_orig= bigsol[[2]],
         header_scale = bigsol[[3]],
         node_id = bigsol[[4]][,1],
         node_left_child = bigsol[[4]][,2],
@@ -156,7 +156,7 @@ create.FEM.basis = function(mesh, saveTree = FALSE)
         mesh = append(orig_mesh, tree_mesh)
         class(mesh) = mesh.class
       }
-    
+
   	  FEMbasis = list(mesh = mesh, order = as.integer(mesh$order),nbasis = mesh$nnodes)
   	  class(FEMbasis) = "FEMbasis"
   	  FEMbasis
@@ -215,7 +215,7 @@ FEM<-function(coeff,FEMbasis)
 #' @param time_mesh A vector containing the b-splines knots for separable smoothing and the nodes for finite differences for parabolic smoothing
 #' @param FLAG_PARABOLIC Boolean. If \code{TRUE} the coefficients are from parabolic smoothing, if \code{FALSE} the separable one.
 #' @description This function defines a FEM.time object.
-#' @usage FEM.time(coeff,mesh_time,FEMbasis,FLAG_PARABOLIC=FALSE)
+#' @usage FEM.time(coeff,time_mesh,FEMbasis,FLAG_PARABOLIC=FALSE)
 #' @return A \code{FEM.time} object. This contains a list with components \code{coeff}, \code{mesh_time}, \code{FEMbasis} and \code{FLAG_PARABOLIC}.
 #' @examples
 #' library(fdaPDE)
