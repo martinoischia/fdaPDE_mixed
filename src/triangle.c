@@ -5009,19 +5009,27 @@ TRIREAL *h;
   eindex = findex = 0;
   if ((fnow > enow) == (fnow > -enow)) {
     Q = enow;
-    enow = e[++eindex];
+    eindex++;
+    if (eindex < elen)
+    enow = e[eindex];
   } else {
     Q = fnow;
-    fnow = f[++findex];
+    findex++;
+		if (findex < flen)
+			fnow = f[findex];
   }
   hindex = 0;
   if ((eindex < elen) && (findex < flen)) {
     if ((fnow > enow) == (fnow > -enow)) {
       Fast_Two_Sum(enow, Q, Qnew, hh);
-      enow = e[++eindex];
+      eindex++;
+      if (eindex < elen)
+          enow = e[eindex];
     } else {
       Fast_Two_Sum(fnow, Q, Qnew, hh);
-      fnow = f[++findex];
+      findex++;
+      if (findex < flen)
+          fnow = f[findex];
     }
     Q = Qnew;
     if (hh != 0.0) {
@@ -5030,10 +5038,14 @@ TRIREAL *h;
     while ((eindex < elen) && (findex < flen)) {
       if ((fnow > enow) == (fnow > -enow)) {
         Two_Sum(Q, enow, Qnew, hh);
-        enow = e[++eindex];
+        eindex++;
+		    if (eindex < elen)
+			     enow = e[eindex];
       } else {
         Two_Sum(Q, fnow, Qnew, hh);
-        fnow = f[++findex];
+        findex++;
+		    if (findex < flen)
+			     fnow = f[findex];
       }
       Q = Qnew;
       if (hh != 0.0) {
@@ -5043,7 +5055,9 @@ TRIREAL *h;
   }
   while (eindex < elen) {
     Two_Sum(Q, enow, Qnew, hh);
-    enow = e[++eindex];
+    eindex++;
+		if (eindex < elen)
+			enow = e[eindex];
     Q = Qnew;
     if (hh != 0.0) {
       h[hindex++] = hh;
@@ -5051,7 +5065,9 @@ TRIREAL *h;
   }
   while (findex < flen) {
     Two_Sum(Q, fnow, Qnew, hh);
-    fnow = f[++findex];
+    findex++;
+		if (findex < flen)
+			fnow = f[findex];
     Q = Qnew;
     if (hh != 0.0) {
       h[hindex++] = hh;
@@ -6462,7 +6478,7 @@ TRIREAL dheight;
   adxbdy = adx * bdy;
   bdxady = bdx * ady;
 
-  det = adheight * (bdxcdy - cdxbdy) 
+  det = adheight * (bdxcdy - cdxbdy)
       + bdheight * (cdxady - adxcdy)
       + cdheight * (adxbdy - bdxady);
 
@@ -11503,7 +11519,7 @@ FILE *polyfile;
       for (j = 0; j < 2; j++) {
         if ((end[j] < b->firstnumber) ||
             (end[j] >= b->firstnumber + m->invertices)) {
-          printf("Error:  Segment %ld has an invalid vertex index.\n", 
+          printf("Error:  Segment %ld has an invalid vertex index.\n",
                  segmentnumber);
           triexit(1);
         }
@@ -13138,7 +13154,7 @@ int regions;
         } else {
           printf("Spreading regional attributes.\n");
         }
-      } else { 
+      } else {
         printf("Spreading regional area constraints.\n");
       }
     }
