@@ -5,6 +5,10 @@
 
 /* .Call calls */
 extern SEXP eval_FEM_fd(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP eval_FEM_time(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP eval_FEM_time_nodes(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP points_projection(SEXP, SEXP);
+extern SEXP tree_mesh_construction(SEXP, SEXP, SEXP, SEXP);
 extern SEXP get_FEM_mass_matrix(SEXP, SEXP, SEXP, SEXP);
 extern SEXP get_FEM_PDE_matrix(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP get_FEM_PDE_space_varying_matrix(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -21,7 +25,11 @@ extern SEXP Smooth_FPCA(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SE
 extern SEXP Density_Estimation(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
-    {"eval_FEM_fd",                       (DL_FUNC) &eval_FEM_fd,                       10},
+    {"eval_FEM_fd",                       (DL_FUNC) &eval_FEM_fd,                      10},
+    {"eval_FEM_time",                     (DL_FUNC) &eval_FEM_time,                    13},
+    {"eval_FEM_time_nodes",               (DL_FUNC) &eval_FEM_time_nodes,               5},
+    {"points_projection",                 (DL_FUNC) &points_projection,                 2},
+    {"tree_mesh_construction",            (DL_FUNC) &tree_mesh_construction,            4},
     {"get_FEM_mass_matrix",               (DL_FUNC) &get_FEM_mass_matrix,               4},
     {"get_FEM_PDE_matrix",                (DL_FUNC) &get_FEM_PDE_matrix,               21},
     {"get_FEM_PDE_space_varying_matrix",  (DL_FUNC) &get_FEM_PDE_space_varying_matrix, 22},

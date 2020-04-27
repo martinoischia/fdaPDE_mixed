@@ -78,7 +78,7 @@ create.FEM.basis = function(mesh, saveTree = FALSE)
       storage.mode(myDim) <- "integer"
       storage.mode(nDim) <- "integer"
 
-      bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, package = "fdaPDE")
+      bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, PACKAGE = "fdaPDE")
       tree_mesh = list(
       treelev = bigsol[[1]][1],
       header_orig= bigsol[[2]],
@@ -141,7 +141,7 @@ create.FEM.basis = function(mesh, saveTree = FALSE)
         }
 
 
-        bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, package = "fdaPDE")
+        bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, PACKAGE = "fdaPDE")
         tree_mesh = list(
         treelev = bigsol[[1]][1],
         header_orig= bigsol[[2]],
