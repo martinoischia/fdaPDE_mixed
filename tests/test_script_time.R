@@ -534,7 +534,7 @@ solParNoNodes = smooth.FEM.time(locations=loc[1:nloc,2:4],observations = data_no
                                 FEMbasis = FEMbasis, lambdaS = lambdaS_par2, lambdaT = lambdaT_par2, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = T,nrealizations = 100,
                                 GCVmethod = GCVMETHODFLAG)
 
-solParCov = fdaPDEtime::smooth.FEM.time(locations=NULL,observations = datacov[,2:length(TimeLocations)],time_mesh = TimeLocations, covariates = W[(1+nnodes):(length(TimeLocations)*nnodes),],
+solParCov = smooth.FEM.time(locations=NULL,observations = datacov[,2:length(TimeLocations)],time_mesh = TimeLocations, covariates = W[(1+nnodes):(length(TimeLocations)*nnodes),],
                                         FEMbasis = FEMbasis, lambdaS = lambdaS_par, lambdaT = lambdaT_par, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = T, nrealizations = 100,
                                         IC=func_evaluation[1:nnodes],GCVmethod = GCVMETHODFLAG)
 
