@@ -5,8 +5,8 @@
 \title{Spatial regression with differential regularization}
 \usage{
 smooth.FEM(locations = NULL, observations, FEMbasis, lambda,
-     covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL,
-     BC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100)
+                  covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL,
+                  BC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL, search = "tree", bary.locations = NULL)
 }
 \arguments{
 \item{locations}{A #observations-by-2 matrix in the 2D case and #observations-by-3 matrix in the 2.5D and 3D case, where
@@ -75,6 +75,13 @@ of the GCV index. If set to "Stochastic" the GCV is approximated by a stochastic
 
 \item{nrealizations}{This parameter is considered only when \code{GCV=TRUE} and \code{GCVmethod = "Stochastic"}.
 It is a positive integer that represents the number of uniform random variables used in stochastic GCV computation.}
+
+\item{search}{a flag to decide the search algorithm type (tree or naive or walking search algorithm).}
+
+\item{bary.locations}{A list with three vectors:
+\code{locations}, location points which are same as the given locations options. (checks whether both locations are the same);
+\code{element ids}, a vector of element id of the points from the mesh where they are located;
+\code{barycenters}, a vector of barycenter of points from the located element.}
 }
 \value{
 A list with the following variables:
@@ -86,6 +93,7 @@ the smoothing parameter is equal to \code{lambda[j]}.}
    \item{\code{edf}}{If GCV is \code{TRUE}, a scalar or vector with the trace of the smoothing matrix for each value of the smoothing parameter specified in \code{lambda}.}
    \item{\code{stderr}}{If GCV is \code{TRUE}, a scalar or vector with the estimate of the standard deviation of the error for each value of the smoothing parameter specified in \code{lambda}.}
    \item{\code{GCV}}{If GCV is \code{TRUE}, a  scalar or vector with the value of the GCV criterion for each value of the smoothing parameter specified in \code{lambda}.}
+   \item{\code{bary.locations}}{A barycenter information of the given locations if the locations are not mesh nodes.}
 }
 }
 \description{

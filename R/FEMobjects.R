@@ -1,6 +1,7 @@
 #' Create a FEM basis
 #'
 #' @param mesh A \code{mesh.2D}, \code{mesh.2.5D} or \code{mesh.3D} object representing the domain triangulation. See \link{create.mesh.2D}, \link{create.mesh.2.5D}, \link{create.mesh.3D}.
+#' @param saveTree a flag to decide to save the tree mesh information in advance (default is FALSE)
 #' @return A \code{FEMbasis} object. This contains the \code{mesh}, along with some additional quantities:
 #' \itemize{
 #' 	\item{\code{order}}{Either "1" or "2" for the 2D and 2.5D case, and "1" for the 3D case.
@@ -19,7 +20,8 @@
 #' The basis' functions are globally continuos functions, that are polynomials once restricted to a triangle in the mesh.
 #' The current implementation includes linear finite elements (when \code{order = 1} in the input \code{mesh}) and
 #' quadratic finite elements (when \code{order = 2} in the input \code{mesh}).
-#' @usage create.FEM.basis(mesh)
+#' If saveTree flag is TRUE, it saves the tree mesh information in advance inside mesh object and can be used later on to save mesh construction time.
+#' @usage create.FEM.basis(mesh, saveTree = FALSE)
 #' @seealso \code{\link{create.mesh.2D}}, \code{\link{create.mesh.2.5D}},\code{\link{create.mesh.3D}}
 #' @examples
 #' ## Upload the quasicircle2D data
@@ -157,7 +159,7 @@ create.FEM.basis = function(mesh, saveTree = FALSE)
         class(mesh) = mesh.class
       }
 
-  	  FEMbasis = list(mesh = mesh, order = as.integer(mesh$order),nbasis = mesh$nnodes)
+  	  FEMbasis = list(mesh = mesh, order = as.integer(mesh$order), nbasis = mesh$nnodes)
   	  class(FEMbasis) = "FEMbasis"
   	  FEMbasis
   }

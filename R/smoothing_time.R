@@ -50,6 +50,11 @@ NULL
 #' @param nrealizations Number of random points used in the stochastic computation of the dofs
 #' @param DOF_matrix Matrix of degrees of freedom. This parameter can be used if the DOF_matrix corresponding to \code{lambdaS} and \code{lambdaT} is available from precedent computation. This allows to save time
 #' since the computation of the dof is the most expensive part of GCV.
+#' @param search a flag to decide the search algorithm type (tree or naive or walking search algorithm).
+#' @param bary.locations A list with three vectors:
+#'  \code{locations}, location points which are same as the given locations options. (checks whether both locations are the same);
+#'  \code{element ids}, a vector of element id of the points from the mesh where they are located;
+#'  \code{barycenters}, a vector of barycenter of points from the located element.
 #' @return A list with the following variables:
 #' \item{\code{fit.FEM.time}}{A \code{FEM.time} object that represents the fitted spatio-temporal field.}
 #' \item{\code{PDEmisfit.FEM.time}}{A \code{FEM.time} object that represents the misfit of the penalized PDE.}
@@ -60,9 +65,10 @@ NULL
 #' \item{\code{GCV}}{If GCV is \code{TRUE}, a  scalar or matrix with the value of the GCV criterion for each combination of the smoothing parameters specified in \code{lambdaS} and \code{lambdaT}.}
 #' \item{\code{bestlambda}}{If GCV is \code{TRUE}, a 2-elements vector with the indices of smoothing parameters returnig the lowest GCV}
 #' \item{\code{ICestimated}}{If FLAG_PARABOLIC is \code{TRUE} and IC is \code{NULL}, a list containing a \code{FEM} object with the initial conditions, the value of the smoothing parameter lambda returning the lowest GCV and, in presence of covariates, the estimated beta coefficients}
+#' \item{\code{bary.locations}}{A barycenter information of the given locations if the locations are not mesh nodes.}
 #' @description Space-time regression  with differential regularization. Space-varying covariates can be included in the model. The technique accurately handle data distributed over irregularly shaped domains. Moreover, various conditions can be imposed at the domain boundaries.
 #' @usage smooth.FEM.time(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL,
-#'  incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL)
+#'  incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL, search = "tree", bary.locations = NULL)
 #' @export
 
 #' @references Sangalli, L.M., Ramsay, J.O. & Ramsay, T.O., 2013. Spatial spline regression models. Journal of the Royal Statistical Society. Series B: Statistical Methodology, 75(4), pp. 681-703.

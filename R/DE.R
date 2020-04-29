@@ -44,7 +44,7 @@
 #' @param search An integer specifying the search algorithm to use. It is either 1 (Naive search algorithm) or 2 (Tree search algorithm).
 #' The default is 2.
 #' @return A list with the following variables:
-#' \item{\code{treeFEMbasis}}{Tree informations.}
+#' \item{\code{FEMbasis}}{Given FEMbasis with tree informations.}
 #' \item{\code{g}}{A vector of length #\code{nodes} that represents the value of the g-function estimated for each \code{node} of the mesh.
 #' The density is the exponential of this function.}
 #' \item{\code{f_init}}{A #\code{nodes}-by-#\code{lambda} parameters matrix. Each column contains the node values of the initial
@@ -171,14 +171,13 @@ DE.FEM <- function(data, FEMbasis, lambda, fvec=NULL, heatStep=0.1, heatIter=500
     node_right_child = bigsol[[9]][,3],
     node_box= bigsol[[10]])
 
-  if (class(FEMbasis) != "treeFEMbasis") {
-    treeFEMbasis = FEMbasis
-    treeFEMbasis$mesh = append(FEMbasis$mesh, tree_mesh)
-    class(treeFEMbasis$mesh) = class(FEMbasis$mesh)
-    class(treeFEMbasis) = "treeFEMbasis"
-  }
+  # Reconstruct FEMbasis with tree mesh
+  mesh.class= class(FEMbasis$mesh)
+  if (is.null(FEMbasis$mesh$treelev)) { #if doesn't exist the tree information
+    FEMbasis$mesh = append(FEMbasis$mesh, tree_mesh)
+  } #if already exist the tree information, don't append
+  class(FEMbasis$mesh) = mesh.class  
   
-  
-  reslist = list(treeFEMbasis = treeFEMbasis, g = g, f_init = f_init, lambda = lambda, data = data, CV_err = CV_err)
+  reslist = list(FEMbasis = FEMbasis, g = g, f_init = f_init, lambda = lambda, data = data, CV_err = CV_err)
   return(reslist)
 }
