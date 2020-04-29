@@ -8,12 +8,6 @@
 
 #include "R_ext/Print.h"
 
-//#include <libseq/mpi.h>
-#include "../inst/include/dmumps_c.h"
-#define JOB_INIT -1
-#define JOB_END -2
-#define USE_COMM_WORLD -987654
-
 template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
 void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::addDirichletBC()
 {
@@ -107,7 +101,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 				std::cout << "ERROR: Point " << i+1 <<" is not in the domain\n";
 				#endif
 			}else //tri_activated.getId() found
-			{ 
+			{
 				for(UInt node = 0; node < Nodes ; ++node)
 				{
 					evaluator = regressionData_.getBarycenter(i,node);
@@ -129,11 +123,11 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 		for(UInt i=0; i<nlocations;i++)
 		{
 			if (regressionData_.getSearch() == 1) { //use Naive search
-				tri_activated = mesh_.findLocationNaive(regressionData_.getLocations()[i]); 
+				tri_activated = mesh_.findLocationNaive(regressionData_.getLocations()[i]);
 			} else if (regressionData_.getSearch() == 2) { //use Tree search (default)
 				tri_activated = mesh_.findLocationTree(regressionData_.getLocations()[i]);
 			}
-			
+
 			if(tri_activated.getId() == Identifier::NVAL)
 			{
 				#ifdef R_VERSION_
@@ -142,7 +136,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 				std::cout << "ERROR: Point " << i+1 <<" is not in the domain\n";
 				#endif
 			}else //tri_activated.getId() found
-			{ 
+			{
 				element_ids_(i)=tri_activated.getId();
 				for(UInt node = 0; node < Nodes ; ++node)
 				{
@@ -285,8 +279,6 @@ MatrixXr MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTim
 
 	// Resolution of the system matrixNoCov * x1 = b
 	MatrixXr x1 = matrixNoCovdec_.solve(b);
-	// MatrixXr x1(b.rows(),b.cols());
- 	// Mumps::template solve(matrixNoCov_,b,x1);
 
 	if (regressionData_.getCovariates().rows() != 0) {
 		// Resolution of G * x2 = V * x1
@@ -421,286 +413,101 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 	UInt nlocations = regressionData_.getNumberofObservations();
 	Real degrees=0;
 
-	// Case 1: MUMPS
-	if (regressionData_.isLocationsByNodes() && regressionData_.getCovariates().rows() == 0 && (!regressionData_.isSpaceTime()||regressionData_.getFlagParabolic()))
-	{
-		UInt nlocations = regressionData_.getObservationsIndices().size();
-		auto k = regressionData_.getObservationsIndices();
-		DMUMPS_STRUC_C id;
 
-
-		id.sym=2;
-		id.par=1;
-		id.job=JOB_INIT;
-		id.comm_fortran=USE_COMM_WORLD;
-		dmumps_c(&id);
-
-		std::vector<int> irn;
-		std::vector<int> jcn;
-		std::vector<double> a;
-		std::vector<int> irhs_ptr;
-		std::vector<int> irhs_sparse;
-		double* rhs_sparse= (double*)malloc(nlocations*sizeof(double));
-
-		id.n=2*nnodes;
-		for (int j=0; j<matrixNoCov_.outerSize(); ++j){
-			for (SpMat::InnerIterator it(matrixNoCov_,j); it; ++it){
-				if(it.col()>=it.row())
-				{
-					irn.push_back(it.row()+1);
-					jcn.push_back(it.col()+1);
-					a.push_back(it.value());
-				}
-			}
-		}
-
-		id.nz=irn.size();
-		id.irn=irn.data();
-		id.jcn=jcn.data();
-		id.a=a.data();
-		id.nz_rhs=nlocations;
-		id.nrhs=2*nnodes;
-		int j = 1;
-		irhs_ptr.push_back(j);
-		for (int l=0; l<k[0]-1; ++l) {
-			irhs_ptr.push_back(j);
-		}
-		for (int i=0; i<k.size()-1; ++i) {
-			++j;
-			for (int l=0; l<k[i+1]-k[i]; ++l) {
-				irhs_ptr.push_back(j);
-			}
-
-		}
-		++j;
-		for (int i=k[k.size()-1]; i < id.nrhs; ++i) {
-			irhs_ptr.push_back(j);
-		}
-		for (int i=0; i<nlocations; ++i){
-			irhs_sparse.push_back(k[i]+1);
-		}
-		id.irhs_sparse=irhs_sparse.data();
-		id.irhs_ptr=irhs_ptr.data();
-		id.rhs_sparse=rhs_sparse;
-
-		#define ICNTL(I) icntl[(I)-1]
-		//Output messages suppressed
-		id.ICNTL(1)=-1;
-		id.ICNTL(2)=-1;
-		id.ICNTL(3)=-1;
-		id.ICNTL(4)=0;
-		id.ICNTL(20)=1;
-		id.ICNTL(30)=1;
-		id.ICNTL(14)=200;
-
-		id.job=6;
-		dmumps_c(&id);
-		id.job=JOB_END;
-		dmumps_c(&id);
-
-			for (int i=0; i< nlocations; ++i){
-				degrees+=rhs_sparse[i];
-			}
-
-		free(rhs_sparse);
+	MatrixXr X1;
+	if (regressionData_.getNumberOfRegions() == 0){ //pointwise data
+		X1 = psi_.transpose() * LeftMultiplybyQ(psi_);
+	}else{ //areal data
+		X1 = psi_.transpose() * A_.asDiagonal() * LeftMultiplybyQ(psi_);
 	}
-	else if(regressionData_.isSpaceTime() && regressionData_.getCovariates().rows() == 0) //! Space-time smoothing without covariates
+
+	if (isRcomputed_ == false)
 	{
-		SpMat X;
-		SpMat BBsmall(M_*N_,M_*N_);
-
-		if(regressionData_.getNumberOfRegions()==0)
-			BBsmall = psi_.transpose()*psi_;
-		else
-			BBsmall = psi_.transpose()*A_*psi_;
-
-		SpMat BB(2*M_*N_,2*M_*N_);
-
-		std::vector<coeff> tripletAll;
-		tripletAll.reserve(BBsmall.nonZeros());
-
-		for (int k=0; k<BBsmall.outerSize(); ++k)
-			for (SpMat::InnerIterator it(BBsmall,k); it; ++it)
-			{
-				tripletAll.push_back(coeff(it.row(), it.col(),it.value()));
-			}
-
-		BB.setFromTriplets(tripletAll.begin(),tripletAll.end());
-		BB.makeCompressed();
-
-	//! Use MUMPS to invert only the selected entries of matrixNoCov_
-		std::vector<int> irn;
-		std::vector<int> jcn;
-		std::vector<double> a;
-
-		for (int j=0; j<matrixNoCov_.outerSize(); ++j)
+		isRcomputed_ = true;
+		//take R0 from the final matrix since it has already applied the dirichlet boundary conditions
+		SpMat R0 = matrixNoCov_.bottomRightCorner(nnodes,nnodes)/lambdaS;
+		R0dec_.compute(R0);
+		if(!regressionData_.isSpaceTime() || !regressionData_.getFlagParabolic())
 		{
-			for (SpMat::InnerIterator it(matrixNoCov_,j); it; ++it)
-			{
-				if(it.col()>=it.row())
-				{
-					irn.push_back(it.row()+1);
-					jcn.push_back(it.col()+1);
-					a.push_back(it.value());
-				}
-			}
-		}
-
-		DMUMPS_STRUC_C id;
-
-		UInt nz_rhs = BB.nonZeros();
-		UInt *innerBB = BB.innerIndexPtr();
-		UInt *outerBB = BB.outerIndexPtr();
-
-		UInt irhs_sparse[nz_rhs];
-
-		for(UInt i=0; i<nz_rhs; ++i)
-		{
-			irhs_sparse[i]=innerBB[i]+1;
-		}
-
-		UInt irhs_ptr[BB.cols()+1];
-
-		for(UInt i=0; i<BB.cols()+1; ++i)
-		{
-			irhs_ptr[i]=outerBB[i]+1;
-		}
-
-		Real rhs_sparse[nz_rhs];
-
-		// Initialize a MUMPS instance. Use MPI_COMM_WORLD
-		id.job=JOB_INIT; id.par=1; id.sym=2;id.comm_fortran=USE_COMM_WORLD;
-		dmumps_c(&id);
-
-		//Define the problem on the host
-		id.n = BB.cols(); id.nz = irn.size(); id.irn=irn.data(); id.jcn=jcn.data();
-		id.a = a.data();
-		id.nz_rhs = nz_rhs; id.nrhs = BB.cols();
-		id.rhs_sparse = rhs_sparse;
-		id.irhs_sparse = irhs_sparse;
-		id.irhs_ptr = irhs_ptr;
-
-		#define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
-		/* No outputs */
-		id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
-		id.ICNTL(14)=1000;
-		id.ICNTL(20)=1; id.ICNTL(30)=1;
-
-		/* Call the MUMPS package. */
-		id.job=6;
-		dmumps_c(&id);
-
-		/* Terminate instance */
-		id.job=JOB_END; dmumps_c(&id);
-
-		SpMat BBPinv = BB;
-
-		Real *valueBBPinv = BBPinv.valuePtr();
-
-		for(UInt i = 0; i < nz_rhs; ++i)
-			valueBBPinv[i] = rhs_sparse[i];
-
-		X = BBPinv*BB;
-		for (int i = 0; i<M_*N_; ++i) {
-			degrees += X.coeff(i,i);
+			MatrixXr X2 = R0dec_.solve(R1_);
+			R_ = R1_.transpose() * X2;
 		}
 	}
-	// Case 2: Eigen
-	else{
-		MatrixXr X1;
-		if (regressionData_.getNumberOfRegions() == 0){ //pointwise data
-			X1 = psi_.transpose() * LeftMultiplybyQ(psi_);
-		}else{ //areal data
-			X1 = psi_.transpose() * A_.asDiagonal() * LeftMultiplybyQ(psi_);
-		}
 
-		if (isRcomputed_ == false)
+	MatrixXr P;
+	MatrixXr X3=X1;
+
+	//define the penalization matrix: note that for separable smoothin should be P=lambdaS*Psk+lambdaT*Ptk
+	// but the second term has been added to X1 for dirichlet boundary conditions
+	if (regressionData_.isSpaceTime() && regressionData_.getFlagParabolic())
+	{
+		SpMat X2 = R1_+lambdaT*LR0k_;
+		P = lambdaS*X2.transpose()*R0dec_.solve(X2);
+	}
+	else
+	{
+		P = lambdaS*R_;
+	}
+
+	if(regressionData_.isSpaceTime() && !regressionData_.getFlagParabolic())
+		X3 += lambdaT*Ptk_;
+
+	//impose dirichlet boundary conditions if needed
+	if(regressionData_.getDirichletIndices().size()!=0)
+	{
+		const std::vector<UInt>& bc_indices = regressionData_.getDirichletIndices();
+		UInt nbc_indices = bc_indices.size();
+
+		Real pen=10e20;
+		for(UInt i=0; i<nbc_indices; i++)
 		{
-			isRcomputed_ = true;
-			//take R0 from the final matrix since it has already applied the dirichlet boundary conditions
-			SpMat R0 = matrixNoCov_.bottomRightCorner(nnodes,nnodes)/lambdaS;
-			R0dec_.compute(R0);
-			if(!regressionData_.isSpaceTime() || !regressionData_.getFlagParabolic())
-			{
-				MatrixXr X2 = R0dec_.solve(R1_);
-				R_ = R1_.transpose() * X2;
+			UInt id = bc_indices[i];
+			X3(id,id)=pen;
+		}
+	}
+
+	X3 -= P;
+	Eigen::LDLT<MatrixXr> Dsolver(X3);
+
+	auto k = regressionData_.getObservationsIndices();
+
+	if(!regressionData_.isSpaceTime() && regressionData_.isLocationsByNodes() && regressionData_.getCovariates().rows() != 0) {
+		degrees += regressionData_.getCovariates().cols();
+
+		// Setup rhs B
+		MatrixXr B;
+		B = MatrixXr::Zero(nnodes,nlocations);
+		// B = I(:,k) * Q
+		for (auto i=0; i<nlocations;++i) {
+			VectorXr ei = VectorXr::Zero(nlocations);
+			ei(i) = 1;
+			VectorXr Qi = LeftMultiplybyQ(ei);
+			for (int j=0; j<nlocations; ++j) {
+				B(k[i], j) = Qi(j);
 			}
 		}
-
-		MatrixXr P;
-		MatrixXr X3=X1;
-
-		//define the penalization matrix: note that for separable smoothin should be P=lambdaS*Psk+lambdaT*Ptk
-		// but the second term has been added to X1 for dirichlet boundary conditions
-		if (regressionData_.isSpaceTime() && regressionData_.getFlagParabolic())
-		{
-			SpMat X2 = R1_+lambdaT*LR0k_;
-			P = lambdaS*X2.transpose()*R0dec_.solve(X2);
+		// Solve the system TX = B
+		MatrixXr X;
+		X = Dsolver.solve(B);
+		// Compute trace(X(k,:))
+		for (int i = 0; i < k.size(); ++i) {
+			degrees += X(k[i], i);
 		}
-		else
-		{
-			P = lambdaS*R_;
-		}
+	}
 
-		if(regressionData_.isSpaceTime() && !regressionData_.getFlagParabolic())
-			X3 += lambdaT*Ptk_;
+	if (regressionData_.isSpaceTime() || !regressionData_.isLocationsByNodes())
+	{
+		MatrixXr X;
+		X = Dsolver.solve(X1);
 
-		//impose dirichlet boundary conditions if needed
-		if(regressionData_.getDirichletIndices().size()!=0)
-		{
-			const std::vector<UInt>& bc_indices = regressionData_.getDirichletIndices();
-			UInt nbc_indices = bc_indices.size();
-
-			Real pen=10e20;
-			for(UInt i=0; i<nbc_indices; i++)
-			{
-				UInt id = bc_indices[i];
-				X3(id,id)=pen;
-			}
-		}
-
-		X3 -= P;
-		Eigen::LDLT<MatrixXr> Dsolver(X3);
-
-		auto k = regressionData_.getObservationsIndices();
-
-		if(!regressionData_.isSpaceTime() && regressionData_.isLocationsByNodes() && regressionData_.getCovariates().rows() != 0) {
+		if (regressionData_.getCovariates().rows() != 0) {
 			degrees += regressionData_.getCovariates().cols();
-
-			// Setup rhs B
-			MatrixXr B;
-			B = MatrixXr::Zero(nnodes,nlocations);
-			// B = I(:,k) * Q
-			for (auto i=0; i<nlocations;++i) {
-				VectorXr ei = VectorXr::Zero(nlocations);
-				ei(i) = 1;
-				VectorXr Qi = LeftMultiplybyQ(ei);
-				for (int j=0; j<nlocations; ++j) {
-					B(k[i], j) = Qi(j);
-				}
-			}
-			// Solve the system TX = B
-			MatrixXr X;
-			X = Dsolver.solve(B);
-			// Compute trace(X(k,:))
-			for (int i = 0; i < k.size(); ++i) {
-				degrees += X(k[i], i);
-			}
 		}
-
-		if (regressionData_.isSpaceTime() || !regressionData_.isLocationsByNodes())
-		{
-			MatrixXr X;
-			X = Dsolver.solve(X1);
-
-			if (regressionData_.getCovariates().rows() != 0) {
-				degrees += regressionData_.getCovariates().cols();
-			}
-			for (int i = 0; i<nnodes; ++i) {
-				degrees += X(i,i);
-			}
+		for (int i = 0; i<nnodes; ++i) {
+			degrees += X(i,i);
 		}
 	}
+
 	_dof(output_indexS,output_indexT) = degrees;
 }
 

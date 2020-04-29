@@ -40,24 +40,29 @@ class  RegressionData{
 
 		//Other parameters
 		UInt order_;
-		UInt search_;
+
 		std::vector<Real> lambdaS_; //space penalization
 		std::vector<Real> lambdaT_;	//time penalization
 		UInt GCVmethod_;
 		UInt nrealizations_;      // Number of relizations for the stochastic estimation of GCV
 
-		bool flag_SpaceTime_; // TRUE if space time smoothing
-		bool flag_mass_;	//mass penalization, only for separable version (flag_parabolic_==FALSE)
-		bool flag_parabolic_;
-
 		std::vector<Real> bc_values_;
 		std::vector<UInt> bc_indices_;
+
 		VectorXr ic_; //initial conditions
+		bool flag_mass_;	//mass penalization, only for separable version (flag_parabolic_==FALSE)
+		bool flag_parabolic_;
 
 		//bool inputType;
 		bool DOF_;
 		bool GCV_;
 		MatrixXr dof_matrix_;
+
+		bool flag_SpaceTime_; // TRUE if space time smoothing
+
+
+
+		UInt search_;
 
 		#ifdef R_VERSION_
 		void setBaryLocations(SEXP RbaryLocations);

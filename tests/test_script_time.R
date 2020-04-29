@@ -14,7 +14,6 @@ graphics.off()
 data(square2Ddata)
 
 mesh=create.mesh.2D(nodes=nodes)
-# x11()
 plot(mesh)
 # axis(1)
 # axis(2)
@@ -30,7 +29,7 @@ a2=runif(1,min=-1.5,max=1.5)
 z<-function(p)
 {
   (a1*sin(2*pi*p[,1])*cos(2*pi*p[,2])+a2*sin(3*pi*p[,1]))*cos(p[,3])
-  
+
 }
 
 
@@ -64,7 +63,7 @@ sol_exact=z(cbind(xeval,yeval,teval))
 RMSE<-function(f,g) sqrt(mean((f-g)^2))
 RMSE(sol_eval,sol_exact)
 
-#### simple mesh 2D (elliptic PDE, separable problem with identity penalization, covariates, 
+#### simple mesh 2D (elliptic PDE, separable problem with identity penalization, covariates,
 #### spatial locations different from mesh nodes,temporal locations different from time mesh nodes) ####
 
 rm(list=ls())
@@ -115,7 +114,7 @@ GCVFLAG=FALSE
 PDE_parameters_anys = list(K = matrix(c(0.01,0,0,1), nrow = 2), b = c(0,0), c = 0)
 
 output_CPP = smooth.FEM.time(locations = cbind(xobs,yobs),time_locations = TimePoints, time_mesh = time_mesh,
-                             observations = observations, covariates=W_nonod, FEMbasis = FEMbasis, 
+                             observations = observations, covariates=W_nonod, FEMbasis = FEMbasis,
                              lambdaS = lambdaS,lambdaT = lambdaT, PDE_parameters = PDE_parameters_anys,
                              GCV=GCVFLAG)
 #image(output_CPP4$fit.FEM)
@@ -133,7 +132,7 @@ plot(mesh)
 FEMbasis = create.FEM.basis(mesh)
 time_mesh=seq(0,4,length.out = 11)
 
-# Set BC 
+# Set BC
 BC = NULL
 BC$BC_indices = which(mesh$nodesmarkers == 1)
 BC$BC_values = rep(0,length(BC$BC_indices))
@@ -149,14 +148,14 @@ GCVMETHODFLAG='Exact'
 
 Sol = smooth.FEM.time(locations = SpacePoints, observations = observations,
                       time_mesh=time_mesh, FEMbasis = FEMbasis, FLAG_PARABOLIC = TRUE,
-                      lambdaS = lambdaS, lambdaT = lambdaT, BC = BC, 
+                      lambdaS = lambdaS, lambdaT = lambdaT, BC = BC,
                       GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG )
 
-image(Sol$fit.FEM.time,1)  
+image(Sol$fit.FEM.time,1)
 plot(Sol$fit.FEM.time,1)
 
 sol_eval=eval.FEM.time(Sol$fit.FEM.time,
-                       locations = SpacePoints, 
+                       locations = SpacePoints,
                        time.instants=time_mesh )
 RMSE<-function(f,g) sqrt(mean((f-g)^2))
 RMSE(sol_eval,DatiEsatti)
@@ -175,13 +174,13 @@ f<-function(x,y,t)
   res=numeric(length =length(x))
   for(i in 1:length(x))
   {
-    if(x[i]>=0 && y[i]>0) 
+    if(x[i]>=0 && y[i]>0)
       res[i]=cos(t[i])*(0.25*pi+x[i])+(y[i]-0.5)^2
-    if(x[i]>=0 && y[i]<=0) 
+    if(x[i]>=0 && y[i]<=0)
       res[i]=cos(2*t[i])*(-0.25*pi-x[i])+(-y[i]-0.5)^2
-    if(x[i]<0 && y[i]>0) 
+    if(x[i]<0 && y[i]>0)
       res[i]=cos(t[i])*(-atan(y[i]/x[i])*0.5)+(sqrt(x[i]^2+y[i]^2)-0.5)^2*K[i]
-    if(x[i]<0 && y[i]<=0) 
+    if(x[i]<0 && y[i]<=0)
       res[i]=cos(2*t[i])*(-atan(y[i]/x[i])*0.5)+(sqrt(x[i]^2+y[i]^2)-0.5)^2*K[i]
   }
   res
@@ -220,13 +219,13 @@ PDE_parameters = list(K = K_func, b = b_func, c = c_func, u = u_func)
 
 FEMbasis = create.FEM.basis(mesh)
 space_time_locations = cbind(rep(TimePoints,each=nrow(locations)),rep(locations[,1],NumTimeInstants),rep(locations[,2],NumTimeInstants))
-DatiEsatti = f(space_time_locations[,2],space_time_locations[,3],space_time_locations[,1]) 
+DatiEsatti = f(space_time_locations[,2],space_time_locations[,3],space_time_locations[,1])
 
 ICesatta = f(mesh$nodes[,1],mesh$nodes[,2],rep(0,nrow(mesh$nodes)))
 
 Data = DatiEsatti+ rnorm(length(DatiEsatti), mean = 0, sd =  0.05*diff(range(DatiEsatti)))
 
-lambdaS_Par = 10^seq(-7,3,length.out = 5) 
+lambdaS_Par = 10^seq(-7,3,length.out = 5)
 lambdaT_Par= 10^seq(-7,  3,length.out = 5)
 
 solution =  smooth.FEM.time(locations = locations, time_mesh = TimePoints,
@@ -248,7 +247,7 @@ sol_eval=eval.FEM.time(solution$fit.FEM.time,locations = evaluatePoints_space, t
 RMSE<-function(f,g) sqrt(mean((f-g)^2))
 RMSE(sol_eval,sol_exact)
 
-################################# 
+#################################
 ######### 2.5D problems #########
 #################################
 
@@ -370,7 +369,7 @@ func = function(x)
 func_evaluation = func(locations)
 FEMbasis=create.FEM.basis(mesh)
 
-plot(FEM.time(coeff=array(func_evaluation,dim=c(length(func_evaluation),1,1)),time_mesh = TimeNodes,FEMbasis,FLAG_PARABOLIC = T),3)
+plot(FEM.time(coeff=array(func_evaluation,dim=c(length(func_evaluation),1,1)),time_mesh = TimeNodesRMSE,FEMbasis,FLAG_PARABOLIC = T),3)
 
 sol_exact=func_evaluation
 
@@ -417,7 +416,7 @@ solPar = smooth.FEM.time(observations = datacov[,2:length(TimeNodes)],time_mesh 
                          IC=func_evaluation[1:mesh$nnodes],GCVmethod = GCVMETHODFLAG)
 
 
-############################################################# 
+#############################################################
 ######### 3D problems (These tests are slow!) #########
 #############################################################
 
@@ -535,7 +534,7 @@ solParNoNodes = smooth.FEM.time(locations=loc[1:nloc,2:4],observations = data_no
                                 FEMbasis = FEMbasis, lambdaS = lambdaS_par2, lambdaT = lambdaT_par2, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = T,nrealizations = 100,
                                 GCVmethod = GCVMETHODFLAG)
 
-solParCov = fdaPDEtime::smooth.FEM.time(locations=NULL,observations = datacov[,2:length(TimeLocations)],time_mesh = TimeLocations, covariates = W[(1+nnodes):(length(TimeLocations)*nnodes),],
+solParCov = smooth.FEM.time(locations=NULL,observations = datacov[,2:length(TimeLocations)],time_mesh = TimeLocations, covariates = W[(1+nnodes):(length(TimeLocations)*nnodes),],
                                         FEMbasis = FEMbasis, lambdaS = lambdaS_par, lambdaT = lambdaT_par, GCV = GCVFLAG, FLAG_MASS = F, FLAG_PARABOLIC = T, nrealizations = 100,
                                         IC=func_evaluation[1:nnodes],GCVmethod = GCVMETHODFLAG)
 

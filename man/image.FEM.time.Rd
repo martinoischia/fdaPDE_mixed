@@ -4,10 +4,12 @@
 \alias{image.FEM.time}
 \title{Image plot of a 2D FEM.time object at a given time}
 \usage{
-\method{image}{FEM.time}(mesh, num_refinements, ...)
+\method{image}{FEM.time}(x,t,lambdaS=1,lambdaT=1,num_refinements=NULL,...)
 }
 \arguments{
 \item{x}{A 2D-mesh \code{FEM.time} object.}
+
+\item{t}{time at which do the plot}
 
 \item{lambdaS}{index of the space penalization parameter to use for the plot, useful when \code{FEM.time} returned by \code{smooth.FEM.time} using GCV}
 

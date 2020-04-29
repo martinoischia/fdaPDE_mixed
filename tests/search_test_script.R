@@ -8,7 +8,7 @@ GCVMETHODFLAG='Stochastic'
 data(peak2Ddata)
 mesh <- create.mesh.2D(nodes, order=2)
 
-# x11()
+
 # plot(mesh)
 
 # Create the FEM basis object
@@ -19,29 +19,29 @@ set.seed(5847947)
 # Exact data - Nodes locations
 fs.test <- function (x, y, r0 = 0.1, r = 0.5, l = 3, b = 1, exclude = TRUE) # Ramsay test function
 {
-  
+
   q <- pi * r/2
   a <- d <- x * 0
-  
+
   ind <- x >= 0 & y > 0
   a[ind] <- q + x[ind]
   d[ind] <- y[ind] - r
-  
+
   ind <- x >= 0 & y <= 0
   a[ind] <- (-q - x[ind])
   d[ind] <- -r - y[ind]
-  
+
   ind <- x < 0
-  a[ind] <- -atan(y[ind]/x[ind]) * r 
+  a[ind] <- -atan(y[ind]/x[ind]) * r
   d[ind] <-( sqrt(x[ind]^2 + y[ind]^2) - r )* (y[ind]/r0*(as.numeric(abs(y[ind])<=r0 & x[ind]>-0.5))+(as.numeric(abs(y[ind])>r0 || x[ind]<(-0.5))))
-  
+
   ind <- abs(d) > r - r0 | (x > l & (x - l)^2 + d^2 > (r - r0)^2)
-  
+
   f <- a * b + d^2
-  
-  if (exclude) 
+
+  if (exclude)
     f[ind] <- NA
-  
+
   attr(f, "exclude") <- ind
   f
 }
@@ -102,10 +102,10 @@ diff
 
 #create tree mesh information (default):
 #check tree mesh information under output_CPP_tree$fit.FEM$FEMbasis$mesh
-output_CPP_tree<-smooth.FEM(observations=data, 
-                            FEMbasis=FEMbasis, 
+output_CPP_tree<-smooth.FEM(observations=data,
+                            FEMbasis=FEMbasis,
                             lambda=lambda,
-                            GCV=GCVFLAG, 
+                            GCV=GCVFLAG,
                             GCVmethod = GCVMETHODFLAG)
 
 #reuse the tree information
@@ -143,18 +143,18 @@ for (i in 1:row) {
   for (j in 1:col) {
     diff = diff + abs(compare1[i,j]-compare2[i,j])
   }
-  
+
 }
 
 diff
 # above results should be all 0
 
 #####4) Tree vs naive: locations diff from mesh nodes  ######
-output_CPP1 = smooth.FEM(locations=loc, 
-                         observations = data2, 
-                         FEMbasis = FEMbasis, 
+output_CPP1 = smooth.FEM(locations=loc,
+                         observations = data2,
+                         FEMbasis = FEMbasis,
                          lambda = lambda,
-                         GCV=GCVFLAG, 
+                         GCV=GCVFLAG,
                          GCVmethod = GCVMETHODFLAG)
 
 #tree search (default)
@@ -182,11 +182,11 @@ diff
 #create bary.locations information (default):
 #bary.locations is the barycenter of the location inside a certain element (given "locations" option)
 #check bary.locations information under output$bary.locations
-output_CPP_bary = smooth.FEM(locations=loc, 
-                         observations = data2, 
-                         FEMbasis=FEMbasis, 
+output_CPP_bary = smooth.FEM(locations=loc,
+                         observations = data2,
+                         FEMbasis=FEMbasis,
                          lambda = lambda,
-                         GCV=GCVFLAG, 
+                         GCV=GCVFLAG,
                          GCVmethod = GCVMETHODFLAG)
 
 #use bary.locations information directly (C++ doesn't calculate the barycenter)
@@ -216,10 +216,10 @@ loc2=loc
 loc2[1,]=c(0,0)
 output_CPP2_bary = smooth.FEM(locations=loc2,
                               bary.locations =output_CPP_bary$bary.locations,
-                              observations = data2, 
-                              FEMbasis = FEMbasis, 
+                              observations = data2,
+                              FEMbasis = FEMbasis,
                               lambda = lambda,
-                              GCV=GCVFLAG, 
+                              GCV=GCVFLAG,
                               GCVmethod = GCVMETHODFLAG)
 # give error of 'Locations are not same as the one in barycenter information.'
 
@@ -231,10 +231,10 @@ points=eval.FEM(output_CPP_bary$fit.FEM,
 ### 7) If locations is null but bary.locations is not null, use the locations in bary.locations  ####
 #check that there is bary.locations information under output_CPP3_bary$bary.locations
 output_CPP3_bary = smooth.FEM(bary.locations =output_CPP_bary$bary.locations,
-                              observations = data2, 
-                              FEMbasis = FEMbasis, 
+                              observations = data2,
+                              FEMbasis = FEMbasis,
                               lambda = lambda,
-                              GCV=GCVFLAG, 
+                              GCV=GCVFLAG,
                               GCVmethod = GCVMETHODFLAG)
 
 #####.##########################################################
@@ -290,9 +290,9 @@ lambda=c(0.00375)
 
 ##### 1) Tree vs naive search comparison : mesh nodes location  #####
 output_CPP1 =smooth.FEM(observations = func_evaluation,
-                        FEMbasis = FEMbasis, 
-                        lambda = lambda, 
-                        GCV = GCVFLAG, 
+                        FEMbasis = FEMbasis,
+                        lambda = lambda,
+                        GCV = GCVFLAG,
                         GCVmethod = GCVMETHODFLAG)
 output_CPP1$fit.FEM$FEMbasis = FEMbasis #for now, don't use tree info
 
@@ -322,10 +322,10 @@ diff
 #create tree mesh information (default):
 #check tree mesh information under output_CPP_tree$fit.FEM$FEMbasis$mesh
 data = func_evaluation
-output_CPP_tree<-smooth.FEM(observations=data, 
-                            FEMbasis=FEMbasis, 
+output_CPP_tree<-smooth.FEM(observations=data,
+                            FEMbasis=FEMbasis,
                             lambda=lambda,
-                            GCV=GCVFLAG, 
+                            GCV=GCVFLAG,
                             GCVmethod = GCVMETHODFLAG)
 
 #reuse the tree information
@@ -363,7 +363,7 @@ for (i in 1:row) {
   for (j in 1:col) {
     diff = diff + abs(compare1[i,j]-compare2[i,j])
   }
-  
+
 }
 
 diff
@@ -371,11 +371,11 @@ diff
 
 
 #####4) Tree vs naive: locations diff from mesh nodes   ######
-output_CPP1 = smooth.FEM(locations=loc, 
-                         observations = data2, 
-                         FEMbasis = FEMbasis, 
+output_CPP1 = smooth.FEM(locations=loc,
+                         observations = data2,
+                         FEMbasis = FEMbasis,
                          lambda = lambda,
-                         GCV=GCVFLAG, 
+                         GCV=GCVFLAG,
                          GCVmethod = GCVMETHODFLAG)
 
 #tree search (default)
@@ -402,11 +402,11 @@ diff
 #create bary.locations information (default):
 #bary.locations is the barycenter of the location inside a certain element (given "locations" option)
 #check bary.locations information under output$bary.locations
-output_CPP_bary = smooth.FEM(locations=loc, 
-                             observations = data2, 
-                             FEMbasis=FEMbasis, 
+output_CPP_bary = smooth.FEM(locations=loc,
+                             observations = data2,
+                             FEMbasis=FEMbasis,
                              lambda = lambda,
-                             GCV=GCVFLAG, 
+                             GCV=GCVFLAG,
                              GCVmethod = GCVMETHODFLAG)
 
 #use bary.locations information directly (C++ doesn't calculate the barycenter)
@@ -436,10 +436,10 @@ loc2=loc
 loc2[1,]=c(0,0,0)
 output_CPP2_bary = smooth.FEM(locations=loc2,
                               bary.locations =output_CPP_bary$bary.locations,
-                              observations = data2, 
-                              FEMbasis = FEMbasis, 
+                              observations = data2,
+                              FEMbasis = FEMbasis,
                               lambda = lambda,
-                              GCV=GCVFLAG, 
+                              GCV=GCVFLAG,
                               GCVmethod = GCVMETHODFLAG)
 # give error of 'Locations are not same as the one in barycenter information.'
 
@@ -452,10 +452,10 @@ points=eval.FEM(output_CPP_bary$fit.FEM,
 ### 7) If locations is null but bary.locations is not null, use the locations in bary.locations  ####
 #check that there is bary.locations information under output_CPP3_bary$bary.locations
 output_CPP3_bary = smooth.FEM(bary.locations =output_CPP_bary$bary.locations,
-                              observations = data2, 
-                              FEMbasis = FEMbasis, 
+                              observations = data2,
+                              FEMbasis = FEMbasis,
                               lambda = lambda,
-                              GCV=GCVFLAG, 
+                              GCV=GCVFLAG,
                               GCVmethod = GCVMETHODFLAG)
 
 #####.##########################################################
@@ -492,7 +492,7 @@ func_evaluation = numeric(nnodes)
 for (i in 0:(nnodes-1)){
   func_evaluation[i+1] = a1* sin(2*pi*mesh$nodes[i+1,1]) +  a2* sin(2*pi*mesh$nodes[i+1,2]) +  a3*sin(2*pi*mesh$nodes[i+1,3]) +1
 }
-ran = range(func_evaluation)  
+ran = range(func_evaluation)
 
 # Perturbed data - Locations at nodes (sd is set according to range(func_evaluation))
 data=func_evaluation+rnorm(nnodes,mean=0,sd=0.05*(ran[2]-ran[1]))
@@ -506,29 +506,29 @@ set.seed(5847947) # necessario per la rimozione dei punti fuori dala mesh C
 if(selected_mesh=="sphere"){
   nloc = 1000
   loc=matrix(data=runif(3*nloc, min=-1,max=1),nrow=nloc,ncol=3,byrow=T) # randomly generated points
-  
+
   ind=NULL
   for(row in 1:nloc){
     normvec = (loc[row,1]^2+loc[row,2]^2+loc[row,3]^2)
     if(normvec>0.975)   # remove points that fall outside the sphere
       ind = c(ind,row)
   }
-  
+
   loc=loc[-ind,]
   nloc=dim(loc)[1]
-  
+
 }else if(selected_mesh=="C_3D"){
   loc1=cbind(runif(750,min=0.95,max=6), runif(750,min=-0.95,max=0.95),runif(750,min=0.5,max=2)) #braccio superiore
   loc2=cbind(runif(750,min=0.95,max=6), runif(750,min=-0.95,max=0.95),runif(750,min=-2,max=-0.5)) # braccio inferiore
   loc3=cbind(runif(750,min=-0.95,max=0.95), runif(750,min=-0.95,max=0.95),runif(750,min=-2,max=2)) #circonferenza
   loc=rbind(loc1,loc2,loc3)
   nloc=dim(loc)[1]
-  
+
   #check if any point falls outside and remove it
   #checkout = smooth.FEM.basis(observations = func_evaluation2,locations=loc,
   #                            FEMbasis = FEMbasis, lambda = lambda,
   #                            CPP_CODE = TRUE, GCV = GCVFLAG, GCVmethod = GCVMETHODFLAG)
-  
+
   out=c(44,52,66,70,114,129,135,153,176,193,200,212,256,275,281,283,288,320,346,361,367,371,381,396,404,411,423,
         464,480,490,501,506,529,541,543,546,547,549,555,582,589,601,603,618,627,637,673,686,705,718,729,741,747,
         752,765,766,770,781,783,787,789,790,802,809,817,826,865,885,903,920,935,940,945,988,989,1001,1004,1026,1042,
@@ -545,7 +545,7 @@ if(selected_mesh=="sphere"){
         2082,2088,2089,2093,2096,2100,2101,2103,2104,2108,2109,2113,2128,2130,2132,2133,2140,2143,2147,2149,2152,2154,
         2156,2157,2163,2164,2166,2174,2177,2179,2182,2184,2185,2192,2193,2199,2202,2203,2204,2211,2215,2218,2227,2232,
         2234,2237,2239,2240,2244,2246)
-  
+
   #update locations and field
   loc=loc[-out,]
   nloc=dim(loc)[1]
@@ -556,7 +556,7 @@ func_evaluation2=numeric(nloc)
 for (i in 0:(nloc-1)){
   func_evaluation2[i+1] = a1* sin(2*pi*loc[i+1,1]) +  a2* sin(2*pi*loc[i+1,2]) +  a3*sin(2*pi*loc[i+1,3]) +1
 }
-ran2=range(func_evaluation2) 
+ran2=range(func_evaluation2)
 
 # check if all point shave been correctly removed
 # checkin =smooth.FEM.basis(observations = func_evaluation2,locations=loc,
@@ -602,10 +602,10 @@ diff
 #create tree mesh information (default):
 #check tree mesh information under output_CPP_tree$fit.FEM$FEMbasis$mesh
 data = func_evaluation
-output_CPP_tree<-smooth.FEM(observations=data, 
-                            FEMbasis=FEMbasis, 
+output_CPP_tree<-smooth.FEM(observations=data,
+                            FEMbasis=FEMbasis,
                             lambda=lambda,
-                            GCV=GCVFLAG, 
+                            GCV=GCVFLAG,
                             GCVmethod = GCVMETHODFLAG)
 
 #reuse the tree information
@@ -644,7 +644,7 @@ for (i in 1:row) {
   for (j in 1:col) {
     diff = diff + abs(compare1[i,j]-compare2[i,j])
   }
-  
+
 }
 
 diff
@@ -652,11 +652,11 @@ diff
 
 
 #####4) Tree vs naive: locations diff from mesh nodes   ######
-output_CPP1 = smooth.FEM(locations=loc, 
-                         observations = data2, 
-                         FEMbasis = FEMbasis, 
+output_CPP1 = smooth.FEM(locations=loc,
+                         observations = data2,
+                         FEMbasis = FEMbasis,
                          lambda = lambda,
-                         GCV=GCVFLAG, 
+                         GCV=GCVFLAG,
                          GCVmethod = GCVMETHODFLAG)
 
 #tree search (default)
@@ -684,11 +684,11 @@ diff
 #create bary.locations information (default):
 #bary.locations is the barycenter of the location inside a certain element (given "locations" option)
 #check bary.locations information under output$bary.locations
-output_CPP_bary = smooth.FEM(locations=loc, 
-                             observations = data2, 
-                             FEMbasis=FEMbasis, 
+output_CPP_bary = smooth.FEM(locations=loc,
+                             observations = data2,
+                             FEMbasis=FEMbasis,
                              lambda = lambda,
-                             GCV=GCVFLAG, 
+                             GCV=GCVFLAG,
                              GCVmethod = GCVMETHODFLAG)
 
 #use bary.locations information directly (C++ doesn't calculate the barycenter)
@@ -717,10 +717,10 @@ loc2=loc
 loc2[1,]=c(0,0,0)
 output_CPP2_bary = smooth.FEM(locations=loc2,
                               bary.locations =output_CPP_bary$bary.locations,
-                              observations = data2, 
-                              FEMbasis = FEMbasis, 
+                              observations = data2,
+                              FEMbasis = FEMbasis,
                               lambda = lambda,
-                              GCV=GCVFLAG, 
+                              GCV=GCVFLAG,
                               GCVmethod = GCVMETHODFLAG)
 # give error of 'Locations are not same as the one in barycenter information.'
 
@@ -732,8 +732,8 @@ points=eval.FEM(output_CPP_bary$fit.FEM,
 ### 7) If locations is null but bary.locations is not null, use the locations in bary.locations  ####
 #check that there is bary.locations information under output_CPP3_bary$bary.locations
 output_CPP3_bary = smooth.FEM(bary.locations =output_CPP_bary$bary.locations,
-                              observations = data2, 
-                              FEMbasis = FEMbasis, 
+                              observations = data2,
+                              FEMbasis = FEMbasis,
                               lambda = lambda,
-                              GCV=GCVFLAG, 
+                              GCV=GCVFLAG,
                               GCVmethod = GCVMETHODFLAG)
