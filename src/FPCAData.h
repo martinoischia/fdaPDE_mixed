@@ -89,8 +89,8 @@ class  FPCAData{
 		FPCAData(){};
 
 		#ifdef R_VERSION_
-		explicit FPCAData(SEXP Rlocations, SEXP RbaryLocations, SEXP Rdatamatrix, SEXP Rorder, SEXP RincidenceMatrix,
-		SEXP Rlambda, SEXP RnPC, SEXP RnFolds, SEXP RGCVmethod, SEXP Rnrealizations, SEXP Rsearch);
+		explicit FPCAData(SEXP Rlocations, SEXP Rdatamatrix, SEXP Rorder, SEXP RincidenceMatrix,
+		SEXP Rlambda, SEXP RnPC, SEXP RnFolds, SEXP RGCVmethod, SEXP Rnrealizations, SEXP Rsearch, SEXP RbaryLocations);
 		#endif
 
 				

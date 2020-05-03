@@ -1,4 +1,4 @@
-CPP_smooth.FEM.FPCA<-function(locations, bary.locations, datamatrix, FEMbasis, incidence_matrix, lambda, ndim, mydim, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100, search)
+CPP_smooth.FEM.FPCA<-function(locations, datamatrix, FEMbasis, incidence_matrix, lambda, ndim, mydim, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100, search, bary.locationss)
 { 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
  
@@ -45,10 +45,9 @@ CPP_smooth.FEM.FPCA<-function(locations, bary.locations, datamatrix, FEMbasis, i
   storage.mode(search) <- "integer"
 
   ## Call C++ function
-  bigsol <- .Call("Smooth_FPCA", locations, bary.locations, datamatrix, FEMbasis$mesh, 
+  bigsol <- .Call("Smooth_FPCA", locations, datamatrix, FEMbasis$mesh, 
                   FEMbasis$order, incidence_matrix, mydim, ndim, 
-                  lambda, nPC, validation, NFolds, GCVmethod, nrealizations, search,
-                  PACKAGE = "fdaPDE")
+                  lambda, nPC, validation, NFolds, GCVmethod, nrealizations, search, bary.locations, PACKAGE = "fdaPDE")
   
   ## Reset them correctly
   #fdobj$basis$params$mesh$triangles = fdobj$basis$params$mesh$triangles + 1
@@ -59,7 +58,7 @@ CPP_smooth.FEM.FPCA<-function(locations, bary.locations, datamatrix, FEMbasis, i
 
 
 
-CPP_smooth.manifold.FEM.FPCA<-function(locations, bary.locations, datamatrix, FEMbasis, incidence_matrix, lambda, ndim, mydim, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100, search)
+CPP_smooth.manifold.FEM.FPCA<-function(locations, datamatrix, FEMbasis, incidence_matrix, lambda, ndim, mydim, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100, search, bary.locations)
 {
   # C++ function for manifold works with vectors not with matrices
   
@@ -110,15 +109,15 @@ CPP_smooth.manifold.FEM.FPCA<-function(locations, bary.locations, datamatrix, FE
   storage.mode(search) <- "integer"
 
   ## Call C++ function
-  bigsol <- .Call("Smooth_FPCA", locations, bary.locations, datamatrix, FEMbasis$mesh,
+  bigsol <- .Call("Smooth_FPCA", locations, datamatrix, FEMbasis$mesh,
                   FEMbasis$mesh$order, incidence_matrix, mydim, ndim, lambda,
-                  nPC, validation, NFolds, GCVmethod, nrealizations, search,
+                  nPC, validation, NFolds, GCVmethod, nrealizations, search, bary.locations,
                   PACKAGE = "fdaPDE")
 
   return(bigsol)
 }
 
-CPP_smooth.volume.FEM.FPCA<-function(locations, bary.locations, datamatrix, FEMbasis, incidence_matrix, lambda, ndim, mydim, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100, search)
+CPP_smooth.volume.FEM.FPCA<-function(locations, datamatrix, FEMbasis, incidence_matrix, lambda, ndim, mydim, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100, search, bary.locations)
 {
   # C++ function for manifold works with vectors not with matrices
   
@@ -169,9 +168,9 @@ CPP_smooth.volume.FEM.FPCA<-function(locations, bary.locations, datamatrix, FEMb
   storage.mode(search) <- "integer"
   
   ## Call C++ function
-  bigsol <- .Call("Smooth_FPCA", locations, bary.locations, datamatrix, FEMbasis$mesh, 
+  bigsol <- .Call("Smooth_FPCA", locations, datamatrix, FEMbasis$mesh, 
                   FEMbasis$mesh$order, incidence_matrix, mydim, ndim, lambda,
-                  nPC, validation, NFolds, GCVmethod, nrealizations, search,
+                  nPC, validation, NFolds, GCVmethod, nrealizations, search, bary.locations,
                   PACKAGE = "fdaPDE")
 
   return(bigsol)
