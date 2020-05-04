@@ -214,19 +214,19 @@ diff
 # If locations in 'bary.locations' and 'locations' are the same, stops
 loc2=loc
 loc2[1,]=c(0,0)
-output_CPP2_bary = smooth.FEM(locations=loc2,
-                              bary.locations =output_CPP_bary$bary.locations,
-                              observations = data2,
-                              FEMbasis = FEMbasis,
-                              lambda = lambda,
-                              GCV=GCVFLAG,
-                              GCVmethod = GCVMETHODFLAG)
-# give error of 'Locations are not same as the one in barycenter information.'
+# output_CPP2_bary = smooth.FEM(locations=loc2,
+                              # bary.locations =output_CPP_bary$bary.locations,
+                              # observations = data2,
+                              # FEMbasis = FEMbasis,
+                              # lambda = lambda,
+                              # GCV=GCVFLAG,
+                              # GCVmethod = GCVMETHODFLAG)
+# above command will give error of 'Locations are not same as the one in barycenter information.'
 
-points=eval.FEM(output_CPP_bary$fit.FEM,
-                locations=loc2,
-                 bary.locations = output_CPP_bary$bary.locations)
-# give error of 'Locations are not same as the one in barycenter information.'
+# points=eval.FEM(output_CPP_bary$fit.FEM,
+#                 locations=loc2,
+#                  bary.locations = output_CPP_bary$bary.locations)
+# above command will give error of 'Locations are not same as the one in barycenter information.'
 
 ### 7) If locations is null but bary.locations is not null, use the locations in bary.locations  ####
 #check that there is bary.locations information under output_CPP3_bary$bary.locations
@@ -434,19 +434,19 @@ diff
 # If locations in 'bary.locations' and 'locations' are the same, stops
 loc2=loc
 loc2[1,]=c(0,0,0)
-output_CPP2_bary = smooth.FEM(locations=loc2,
-                              bary.locations =output_CPP_bary$bary.locations,
-                              observations = data2,
-                              FEMbasis = FEMbasis,
-                              lambda = lambda,
-                              GCV=GCVFLAG,
-                              GCVmethod = GCVMETHODFLAG)
-# give error of 'Locations are not same as the one in barycenter information.'
+# output_CPP2_bary = smooth.FEM(locations=loc2,
+#                               bary.locations =output_CPP_bary$bary.locations,
+#                               observations = data2,
+#                               FEMbasis = FEMbasis,
+#                               lambda = lambda,
+#                               GCV=GCVFLAG,
+#                               GCVmethod = GCVMETHODFLAG)
+# above command will give error give error of 'Locations are not same as the one in barycenter information.'
 
-points=eval.FEM(output_CPP_bary$fit.FEM,
-                locations=loc2,
-                bary.locations = output_CPP_bary$bary.locations)
-# give error of 'Locations are not same as the one in barycenter information.'
+# points=eval.FEM(output_CPP_bary$fit.FEM,
+#                 locations=loc2,
+#                 bary.locations = output_CPP_bary$bary.locations)
+# above command will give error give error of 'Locations are not same as the one in barycenter information.'
 
 
 ### 7) If locations is null but bary.locations is not null, use the locations in bary.locations  ####
@@ -715,19 +715,19 @@ diff
 # If locations in 'bary.locations' and 'locations' are the same, stops
 loc2=loc
 loc2[1,]=c(0,0,0)
-output_CPP2_bary = smooth.FEM(locations=loc2,
-                              bary.locations =output_CPP_bary$bary.locations,
-                              observations = data2,
-                              FEMbasis = FEMbasis,
-                              lambda = lambda,
-                              GCV=GCVFLAG,
-                              GCVmethod = GCVMETHODFLAG)
-# give error of 'Locations are not same as the one in barycenter information.'
+# output_CPP2_bary = smooth.FEM(locations=loc2,
+#                               bary.locations =output_CPP_bary$bary.locations,
+#                               observations = data2,
+#                               FEMbasis = FEMbasis,
+#                               lambda = lambda,
+#                               GCV=GCVFLAG,
+#                               GCVmethod = GCVMETHODFLAG)
+# above command will give error give error of 'Locations are not same as the one in barycenter information.'
 
-points=eval.FEM(output_CPP_bary$fit.FEM,
-                locations=loc2,
-                bary.locations = output_CPP_bary$bary.locations)
-# give error of 'Locations are not same as the one in barycenter information.'
+# points=eval.FEM(output_CPP_bary$fit.FEM,
+#                 locations=loc2,
+#                 bary.locations = output_CPP_bary$bary.locations)
+# above command will give error give error of 'Locations are not same as the one in barycenter information.'
 
 ### 7) If locations is null but bary.locations is not null, use the locations in bary.locations  ####
 #check that there is bary.locations information under output_CPP3_bary$bary.locations

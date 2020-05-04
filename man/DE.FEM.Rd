@@ -70,7 +70,7 @@ The default is 2.}
 }
 \value{
 A list with the following variables:
-\item{\code{treeFEMbasis}}{Tree informations.}
+\item{\code{FEMbasis}}{Given FEMbasis with tree informations.}
 \item{\code{g}}{A vector of length #\code{nodes} that represents the value of the g-function estimated for each \code{node} of the mesh.
 The density is the exponential of this function.}
 \item{\code{f_init}}{A #\code{nodes}-by-#\code{lambda} parameters matrix. Each column contains the node values of the initial

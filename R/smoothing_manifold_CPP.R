@@ -120,11 +120,11 @@ CPP_eval.manifold.FEM = function(FEM, locations, incidence_matrix, redundancy, n
     barycenters <- as.matrix(bary.locations$barycenters)
   }
 
-  if (search == 1) { #use Naive search
-    print('This is Naive Search')
-  } else if (search == 2)  { #use Tree search (default)
-    print('This is Tree Search')
-  }
+  # if (search == 1) { #use Naive search
+  #   print('This is Naive Search')
+  # } else if (search == 2)  { #use Tree search (default)
+  #   print('This is Tree Search')
+  # }
 
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))
