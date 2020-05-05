@@ -302,13 +302,13 @@ CPP_eval.FEM = function(FEM, locations, incidence_matrix, redundancy, ndim, mydi
     barycenters <- as.matrix(bary.locations$barycenters)
   }
 
-  if (search == 1) { #use Naive search
-    print('This is Naive Search')
-  } else if (search == 2)  { #use Tree search (default)
-    print('This is Tree Search')
-  } else if (search == 3) { #use Walking search
-      print('This is Walking Search')
-  }
+  # if (search == 1) { #use Naive search
+  #   print('This is Naive Search')
+  # } else if (search == 2)  { #use Tree search (default)
+  #   print('This is Tree Search')
+  # } else if (search == 3) { #use Walking search
+  #     print('This is Walking Search')
+  # }
 
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))

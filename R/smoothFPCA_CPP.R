@@ -1,4 +1,4 @@
-CPP_smooth.FEM.FPCA<-function(locations, datamatrix, FEMbasis, incidence_matrix, lambda, ndim, mydim, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100, search, bary.locationss)
+CPP_smooth.FEM.FPCA<-function(locations, datamatrix, FEMbasis, incidence_matrix, lambda, ndim, mydim, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100, search, bary.locations)
 { 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
  

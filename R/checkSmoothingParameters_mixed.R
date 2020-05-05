@@ -1,4 +1,4 @@
-checkSmoothingParameters_mixed<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, PDE_parameters=NULL, GCVmethod = 2, nrealizations = 100, search, bary.locations=bary.locations)
+checkSmoothingParameters_mixed<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, random_effect, incidence_matrix = NULL, BC = NULL, GCV = FALSE, PDE_parameters=NULL, GCVmethod = 2, nrealizations = 100, search, bary.locations=bary.locations)
 {
   #################### Parameter Check #########################
 

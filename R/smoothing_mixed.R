@@ -42,7 +42,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   if(!is.null(DOF_matrix))
     DOF=FALSE
 
-  space_varying=checkSmoothingParameters_mixed(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda, covariates=covariates, incidence_matrix=incidence_matrix, 
+  space_varying=checkSmoothingParameters_mixed(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda, covariates=covariates, random_effect=random_effect, incidence_matrix=incidence_matrix, 
     BC=BC, GCV=GCV, PDE_parameters=PDE_parameters, GCVmethod=GCVMETHOD , nrealizations=nrealizations, search=search, bary.locations=bary.locations)
   
   ## Converting to format for internal usage
@@ -97,8 +97,9 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   num_units = dim(observations)[2]
   
   ### Converting into big covariate X with both fixed effect and random effect
-  m = num_units
-  p = length(random_effect)
+  m = num_units #num of statistical units
+  p = length(random_effect) #num of random-effect coeff
+  q = dim(covariates)[2] #num of common-effect coeff
   N = length(observations) #dim(covariates)[1] should be same
   n = dim(observations)[1] # assumes to have same spatial locations across statistical units
 
@@ -154,28 +155,28 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     numnodes = nrow(FEMbasis$mesh$nodes)
 
   }
-  # else if(class(FEMbasis$mesh) == 'mesh.2.5D'){
+  else if(class(FEMbasis$mesh) == 'mesh.2.5D'){
 
-  #   bigsol = NULL
-  #   print('C++ Code Execution')
-  #   # if(!is.null(locations))
-  #   #   stop("The option locations!=NULL for manifold domains is currently not implemented")
-  #   bigsol = CPP_smooth.manifold.FEM.mixed(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda, 
-  #                                         covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim, 
-  #                                         BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
+    bigsol = NULL
+    print('C++ Code Execution')
+    # if(!is.null(locations))
+    #   stop("The option locations!=NULL for manifold domains is currently not implemented")
+    bigsol = CPP_smooth.manifold.FEM.mixed(locations=locations, observations=observations, num_units=num_units, FEMbasis=FEMbasis, lambda=lambda, 
+                                          covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim, 
+                                          BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
 
-  #   numnodes = FEMbasis$mesh$nnodes
+    numnodes = FEMbasis$mesh$nnodes
 
-  # }else if(class(FEMbasis$mesh) == 'mesh.3D'){
+  }else if(class(FEMbasis$mesh) == 'mesh.3D'){
 
-  #   bigsol = NULL
-  #   print('C++ Code Execution')
-  #   bigsol = CPP_smooth.volume.FEM.mixed(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda, 
-  #                                       covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim, 
-  #                                       BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
+    bigsol = NULL
+    print('C++ Code Execution')
+    bigsol = CPP_smooth.volume.FEM.mixed(locations=locations, observations=observations, num_units=num_units, FEMbasis=FEMbasis, lambda=lambda, 
+                                        covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim, 
+                                        BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
 
-  #   numnodes = FEMbasis$mesh$nnodes
-  # }
+    numnodes = FEMbasis$mesh$nnodes
+  }
 
   f = bigsol[[1]][1:numnodes,]
   g = bigsol[[1]][(numnodes+1):(2*numnodes),]
@@ -184,10 +185,55 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   GCV_ = bigsol[[3]]
   bestlambda = bigsol[[4]]+1
 
-  if(!is.null(covariates))
-    beta = matrix(data=bigsol[[5]],nrow=ncol(covariates),ncol=length(lambda))
+  if(!is.null(covariates)) {
+    print('********Start of coefficient conversion')
+    #q:num of common-effect coeff; p: num of random-effect coeff; m: num of statistical units
+    #already expanded covariates above
+    matrixX = matrix(data=bigsol[[5]],nrow=ncol(covariates),ncol=length(lambda)) #implementative coeff (length: (q-p) + m*p)
+
+    # convert into official coeff (length: q + m*p)
+    if (q !=p) { #random-effect is the subset of fixed-effect
+      matrixBetaPrime <- matrixX[1:(q-p),,drop=FALSE]
+      matrixBiPrime <- matrixX[-(1:(q-p)),,drop=FALSE] #split matrixX into 2 matrices
+    } else {
+      matrixBiPrime <- matrixX
+    }
+
+    
+    #convert fixed-effect
+    matrixBeta = matrix(0,nrow=q,ncol=length(lambda))
+    indBeta = 1
+    indBi = 1
+    
+    for (i in 1:q) {
+      if (!is.element(i,random_effect)) { #beta as it is
+        matrixBeta[i,] = matrixBetaPrime[indBeta,,drop=FALSE] 
+        indBeta=indBeta+1
+      } else { #convert beta prime to original prime
+        temp = numeric(length(lambda))
+        for (j in 1:m) {
+          temp =temp + matrixBiPrime[indBi+(j-1)*p,]
+        }
+        matrixBeta[i,]=temp/m
+        indBi=indBi+1
+      }
+    }
+  
+    #convert random-effect
+    matrixBi = matrix(0,nrow=m*p,ncol=length(lambda))
+    indRanEff=1 #this index will be cycled according to random_effect elements
+    
+    for (i in 1:(m*p)) {
+      matrixBi[i,] = matrixBiPrime[i,]-matrixBeta[random_effect[ifelse(indRanEff!=0,indRanEff, p)],]
+      indRanEff = (indRanEff+1)%%p
+    }
+
+    coeff = rbind(matrixBeta, matrixBi)
+    print('********End of coefficient conversion')
+    
+  }
   else
-    beta = NULL
+    coeff = NULL
 
    # Save information of Tree Mesh
     tree_mesh = list(
@@ -223,9 +269,9 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   {
     stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
     reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM,
-            beta = beta, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, bary.locations = bary.locations)
+            coeff = coeff, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, bary.locations = bary.locations)
   }else{
-    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta, bary.locations = bary.locations)
+    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, coeff = coeff, bary.locations = bary.locations)
   }
 
   return(reslist)
