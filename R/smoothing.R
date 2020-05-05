@@ -99,14 +99,14 @@
 #' FEMbasis = create.FEM.basis(mesh)
 #' lambda = 10^-1
 #' # no covariate
-#' data = fs.test(mesh$nodes[,1], mesh$nodes[,2], exclude = FALSE) + rnorm(nrow(mesh$nodes), sd = 0.5)
+#' data = fs.test(mesh$nodes[,1], mesh$nodes[,2]) + rnorm(nrow(mesh$nodes), sd = 0.5)
 #'
 #' solution = smooth.FEM.basis(observations = data, FEMbasis = FEMbasis, lambda = lambda)
 #' plot(solution$fit.FEM)
 #'
 #' # with covariates
 #' covariate = covs.test(mesh$nodes[,1], mesh$nodes[,2])
-#' data = fs.test(mesh$nodes[,1], mesh$nodes[,2], exclude = FALSE) + 2*covariate + rnorm(nrow(mesh$nodes), sd = 0.5)
+#' data = fs.test(mesh$nodes[,1], mesh$nodes[,2]) + 2*covariate + rnorm(nrow(mesh$nodes), sd = 0.5)
 #'
 #' solution = smooth.FEM.basis(observations = data, covariates = covariate, FEMbasis = FEMbasis, lambda = lambda)
 #' # beta estimate:

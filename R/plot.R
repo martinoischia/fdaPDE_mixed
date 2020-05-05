@@ -25,7 +25,7 @@
 #' FEMbasis = create.FEM.basis(mesh)
 #' ## Compute the coeff vector evaluating the desired function at the mesh nodes
 #' ## In this case we consider the fs.test() function introduced by Wood et al. 2008
-#' coeff = fs.test(mesh$nodes[,1], mesh$nodes[,2], exclude = FALSE)
+#' coeff = fs.test(mesh$nodes[,1], mesh$nodes[,2])
 #' ## Create the FEM object
 #' FEMfunction = FEM(coeff, FEMbasis)
 #'
@@ -79,7 +79,7 @@ if(class(x$FEMbasis$mesh)=="mesh.2D"){
 #' ## Compute the coeff vector evaluating the desired function at the mesh nodes
 #' ## In this case we consider the fs.test() function introduced by Wood et al. 2008
 #' time = 1:5
-#' coeff = rep(fs.test(mesh$nodes[,1], mesh$nodes[,2], exclude = FALSE),5)*time
+#' coeff = rep(fs.test(mesh$nodes[,1], mesh$nodes[,2]),5)*time
 #' ## Create the FEM.time object
 #' FEM_time_function = FEM.time(coeff=coeff, time_mesh=1:5,FEMbasis=FEMbasis,FLAG_PARABOLIC=T)
 #'
@@ -515,7 +515,7 @@ plot.mesh.3D<-function(x,...){
  #' FEMbasis = create.FEM.basis(mesh)
  #' ## Compute the coeff vector evaluating the desired function at the mesh nodes
  #' ## In this case we consider the fs.test() function introduced by Wood et al. 2008
- #' coeff = fs.test(mesh$nodes[,1], mesh$nodes[,2], exclude = FALSE)
+ #' coeff = fs.test(mesh$nodes[,1], mesh$nodes[,2])
  #' ## Create the FEM object
  #' FEMfunction = FEM(coeff, FEMbasis)
  #'
@@ -560,7 +560,7 @@ plot.mesh.3D<-function(x,...){
  #' ## Compute the coeff vector evaluating the desired function at the mesh nodes
  #' ## In this case we consider the fs.test() function introduced by Wood et al. 2008
  #' time = 1:5
- #' coeff = rep(fs.test(mesh$nodes[,1], mesh$nodes[,2], exclude = FALSE),5)*time
+ #' coeff = rep(fs.test(mesh$nodes[,1], mesh$nodes[,2]),5)*time
  #' ## Create the FEM.time object
  #' FEM_time_function = FEM.time(coeff=coeff, time_mesh=1:5,FEMbasis=FEMbasis,FLAG_PARABOLIC=T)
  #'
