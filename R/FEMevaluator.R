@@ -5,6 +5,11 @@
 #' FEM object should be evaluated.
 #' @param incidence_matrix In case of areal evaluations, the #regions-by-#elements incidence matrix defining the regions
 #' where the FEM object should be evaluated.
+#' @param search a flag to decide the search algorithm type (tree or naive or walking search algorithm).
+#' @param bary.locations A list with three vectors:
+#'  \code{locations}, location points which are same as the given locations options. (checks whether both locations are the same);
+#'  \code{element ids}, a vector of element id of the points from the mesh where they are located;
+#'  \code{barycenters}, a vector of barycenter of points from the located element.
 #' @return
 #' A vector or a matrix of numeric evaluations of the \code{FEM} object.
 #' If the \code{FEM} object contains multiple finite element functions the output is a matrix, and
@@ -13,7 +18,7 @@
 #' @description It evaluates a FEM object at the specified set of locations or areal regions. The locations are used for
 #' pointwise evaluations and incidence matrix for areal evaluations.
 #' The locations and the incidence matrix cannot be both NULL or both provided.
-#' @usage eval.FEM(FEM, locations = NULL, incidence_matrix = NULL)
+#' @usage eval.FEM(FEM, locations = NULL, incidence_matrix = NULL, search = "tree", bary.locations = NULL)
 #' @references
 #' \itemize{
 #'    \item{Sangalli, L. M., Ramsay, J. O., & Ramsay, T. O. (2013). Spatial spline regression models.
@@ -132,11 +137,16 @@ eval.FEM <- function(FEM, locations = NULL, incidence_matrix = NULL, search = "t
 #' @param FEM.time A \code{FEM.time} object to be evaluated.
 #' @param locations A 3-columns(in case of planar mesh) or 4-columns(in case of 2D manifold in a 3D space or a 3D volume) matrix with the time and spatial locations where the FEM.time object should be evaluated.
 #' @param incidence_matrix In case of areal data, the #regions x #elements incidence matrix defining the regions
+#' @param search a flag to decide the search algorithm type (tree or naive or walking search algorithm).
+#' @param bary.locations A list with three vectors:
+#'  \code{locations}, location points which are same as the given locations options. (checks whether both locations are the same);
+#'  \code{element ids}, a vector of element id of the points from the mesh where they are located;
+#'  \code{barycenters}, a vector of barycenter of points from the located element.
 #' @return
 #' A matrix of numeric evaluations of the \code{FEM.time} object. Each row indicates the location where the evaluation has been taken, the column indicates the
 #' function evaluated.
 #' @description It evaluates a FEM.time object the specified set of locations or regions. Locations and incidence_matrix parameters cannot be both null or both provided.
-#' @usage eval.FEM.time(FEM.time, locations, incidence_matrix=NULL)
+#' @usage eval.FEM.time(FEM.time, locations=NULL, time.instants=NULL, space.time.locations=NULL, incidence_matrix = NULL,lambdaS=1,lambdaT=1, search = "tree", bary.locations=NULL)
 #' @references
 #'  Devillers, O. et al. 2001. Walking in a Triangulation, Proceedings of the Seventeenth Annual Symposium on Computational Geometry
 #' @export
@@ -368,49 +378,49 @@ res <- NULL
 #   return(evalmat)
 # }
 #
-R_insideIndex = function (mesh, location)
-{
-  #  insideIndex returns the index of the triangle containing the point
-  # (X,Y) if such a triangle exists, and NaN otherwise.
-  #  TRICOEF may have already been calculated for efficiency,
-  #  but if the function is called with four arguments, it is calculated.
-
-
-  eps=2.2204e-016
-  small = 10000*eps
-
-  nodes = mesh$nodes
-  triangles = mesh$triangles
-  X = location[1]
-  Y = location[2]
-
-  ntri   = dim(triangles)[[1]]
-  indtri   = matrix(1:ntri,ncol=1)
-
-  #  compute coefficients for computing barycentric coordinates if needed
-
-  tricoef = R_tricoefCal(mesh)
-
-  #  compute barycentric coordinates
-  r3 = X - nodes[triangles[,3],1]
-  s3 = Y - nodes[triangles[,3],2]
-  lam1 = ( tricoef[,4]*r3 - tricoef[,2]*s3)
-  lam2 = (-tricoef[,3]*r3 + tricoef[,1]*s3)
-  lam3 = 1 - lam1 - lam2
-
-  #  test these coordinates for a triple that are all between 0 and 1
-  int  = (-small <= lam1 & lam1 <= 1+small) &
-    (-small <= lam2 & lam2 <= 1+small) &
-    (-small <= lam3 & lam3 <= 1+small)
-
-  #  return the index of this triple, or NaN if it doesn't exist
-  indi = indtri[int]
-  if (length(indi)<1)
-  {
-    ind = NA
-  }else{
-    ind = min(indi)
-  }
-
-  ind
-}
+# R_insideIndex = function (mesh, location)
+# {
+#   #  insideIndex returns the index of the triangle containing the point
+#   # (X,Y) if such a triangle exists, and NaN otherwise.
+#   #  TRICOEF may have already been calculated for efficiency,
+#   #  but if the function is called with four arguments, it is calculated.
+#
+#
+#   eps=2.2204e-016
+#   small = 10000*eps
+#
+#   nodes = mesh$nodes
+#   triangles = mesh$triangles
+#   X = location[1]
+#   Y = location[2]
+#
+#   ntri   = dim(triangles)[[1]]
+#   indtri   = matrix(1:ntri,ncol=1)
+#
+#   #  compute coefficients for computing barycentric coordinates if needed
+#
+#   tricoef = R_tricoefCal(mesh)
+#
+#   #  compute barycentric coordinates
+#   r3 = X - nodes[triangles[,3],1]
+#   s3 = Y - nodes[triangles[,3],2]
+#   lam1 = ( tricoef[,4]*r3 - tricoef[,2]*s3)
+#   lam2 = (-tricoef[,3]*r3 + tricoef[,1]*s3)
+#   lam3 = 1 - lam1 - lam2
+#
+#   #  test these coordinates for a triple that are all between 0 and 1
+#   int  = (-small <= lam1 & lam1 <= 1+small) &
+#     (-small <= lam2 & lam2 <= 1+small) &
+#     (-small <= lam3 & lam3 <= 1+small)
+#
+#   #  return the index of this triple, or NaN if it doesn't exist
+#   indi = indtri[int]
+#   if (length(indi)<1)
+#   {
+#     ind = NA
+#   }else{
+#     ind = min(indi)
+#   }
+#
+#   ind
+# }
