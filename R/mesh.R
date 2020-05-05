@@ -440,9 +440,9 @@ create.mesh.2.5D<- function(nodes, triangles, order = 1)
 #' y <- seq(-3,3,by=0.6)
 #'  z <- seq(-3,3,by=0.6)
 #' grid = expand.grid(x=x, y=y, z=z)
-#' loc = points.projection.2.5D(mesh, grid)
+#' loc = projection.points.2.5D(mesh, grid)
 
-points.projection.2.5D<-function(mesh, locations) {
+projection.points.2.5D<-function(mesh, locations) {
   if(class(mesh) !="mesh.2.5D")
   stop("Data projection is only available for 2.5D mesh ")
 
