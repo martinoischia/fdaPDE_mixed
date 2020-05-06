@@ -228,12 +228,12 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
       indRanEff = (indRanEff+1)%%p
     }
 
-    coeff = rbind(matrixBeta, matrixBi)
+    betabi = rbind(matrixBeta, matrixBi)
     print('********End of coefficient conversion')
     
   }
   else
-    coeff = NULL
+    betabi = NULL
 
    # Save information of Tree Mesh
     tree_mesh = list(
@@ -269,9 +269,9 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   {
     stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
     reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM,
-            coeff = coeff, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, bary.locations = bary.locations)
+            betabi = betabi, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, bary.locations = bary.locations)
   }else{
-    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, coeff = coeff, bary.locations = bary.locations)
+    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, betabi = betabi, bary.locations = bary.locations)
   }
 
   return(reslist)
