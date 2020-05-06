@@ -122,7 +122,7 @@ checkSmoothingParameters_mixed<-function(locations = NULL, observations, FEMbasi
   ans
 }
 
-checkSmoothingParametersSize_mixed<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, DOF=FALSE, DOF_matrix=NULL, space_varying=FALSE, PDE_parameters = NULL, ndim, mydim)
+checkSmoothingParametersSize_mixed<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, random_effect, incidence_matrix = NULL, BC = NULL, GCV = FALSE, DOF=FALSE, DOF_matrix=NULL, space_varying=FALSE, PDE_parameters = NULL, ndim, mydim)
 {
   #################### Parameter Check #########################
   if(ncol(observations) < 1)
@@ -148,15 +148,33 @@ checkSmoothingParametersSize_mixed<-function(locations = NULL, observations, FEM
     if(dim(locations)[1]==dim(FEMbasis$mesh$nodes)[1] & dim(locations)[2]==dim(FEMbasis$mesh$nodes)[2] & !(sum(abs(locations[,1]))==sum(abs(FEMbasis$mesh$nodes[,1])) & sum(abs(locations[,2]))==sum(abs(FEMbasis$mesh$nodes[,2]))) )
       warning("The locations matrix has the same dimensions as the mesh nodes. If the locations you are using are the mesh nodes, set locations=NULL instead")
   }
+
   if(ncol(lambda) != 1)
     stop("'lambda' must be a column vector")
   if(nrow(lambda) < 1)
     stop("'lambda' must contain at least one element")
+
   if(!is.null(covariates))
   {
     if(nrow(covariates) != nrow(observations)*ncol(observations))
       stop("'covariates' and 'observations' have incompatible size;")
   }
+
+  ###### added but may be changed after deciding mandatory options
+  if(!is.null(random_effect)) {
+    if (ncol(covariates) < length(random_effect)) {
+      stop("'random_effect' has incompatible size")
+    }
+
+    # check whether the index in random_effect vectors are appropriate
+    cov_ind= seq(length.out=dim(covariates)[2])
+    for (i in 1:length(random_effect)) {
+      if(!(random_effect[i] %in% cov_ind)) {
+        stop("'random_effect' has out of range index")
+      }
+    }
+  }
+
 
   if (!is.null(incidence_matrix))
   {

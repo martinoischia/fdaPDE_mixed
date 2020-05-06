@@ -73,7 +73,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   }
 
 
-  checkSmoothingParametersSize_mixed(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda, covariates=covariates, incidence_matrix=incidence_matrix, 
+  checkSmoothingParametersSize_mixed(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda, covariates=covariates, random_effect=random_effect, incidence_matrix=incidence_matrix, 
     BC=BC, GCV=GCV, space_varying=space_varying, PDE_parameters=PDE_parameters, ndim=ndim, mydim=mydim)
   
   # Check whether the locations coincide with the mesh nodes (should be put after all the validations)
