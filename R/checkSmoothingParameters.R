@@ -49,6 +49,7 @@ checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lam
   if(!is.logical(GCV))
     stop("'GCV' is not logical")
 
+
   if(!is.null(PDE_parameters))
   {
     if (is.null(PDE_parameters$K))
