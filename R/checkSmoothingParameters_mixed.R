@@ -1,4 +1,4 @@
-checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, PDE_parameters=NULL, GCVmethod = 2, nrealizations = 100, search, bary.locations=bary.locations)
+checkSmoothingParameters_mixed<-function(locations = NULL, observations, FEMbasis, lambda, covariates, random_effect = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, PDE_parameters=NULL, GCVmethod = 2, nrealizations = 100, search, bary.locations=bary.locations)
 {
   #################### Parameter Check #########################
 
@@ -26,6 +26,9 @@ checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lam
 
   if (is.null(observations))
     stop("observations required;  is NULL.")
+
+  if (is.null(covariates))
+    stop("covariates required;  is NULL.")
 
   if (is.null(lambda))
     stop("lambda required;  is NULL.")
@@ -74,7 +77,7 @@ checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lam
       stop("Locations are not same as the one in barycenter information.")
     }
   }  # end of bary.locations
-
+ 
   space_varying=FALSE
 
   if(!is.null(PDE_parameters$u)){
@@ -122,41 +125,59 @@ checkSmoothingParameters<-function(locations = NULL, observations, FEMbasis, lam
   ans
 }
 
-checkSmoothingParametersSize<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, DOF=FALSE, DOF_matrix=NULL, space_varying=FALSE, PDE_parameters = NULL, ndim, mydim)
+checkSmoothingParametersSize_mixed<-function(locations = NULL, observations, FEMbasis, lambda, covariates, random_effect = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, DOF=FALSE, DOF_matrix=NULL, space_varying=FALSE, PDE_parameters = NULL, ndim, mydim)
 {
   #################### Parameter Check #########################
-  if(ncol(observations) != 1)
-    stop("'observations' must be a column vector")
+  if(ncol(observations) < 1)
+    stop("'observations' must contain at least one element")
   if(nrow(observations) < 1)
     stop("'observations' must contain at least one element")
-  if(is.null(locations))
-  {
-    if(class(FEMbasis$mesh) == "mesh.2D"){
-      if(nrow(observations) > nrow(FEMbasis$mesh$nodes))
-        stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
-    }else if(class(FEMbasis$mesh) == "mesh.2.5D" || class(FEMbasis$mesh) == "mesh.3D"){
-      if(nrow(observations) > FEMbasis$mesh$nnodes)
-        stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
-    }
-  }
+  # if(is.null(locations))
+  # {
+  #   if(class(FEMbasis$mesh) == "mesh.2D"){
+  #     if(nrow(observations) > nrow(FEMbasis$mesh$nodes))
+  #       stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
+  #   }else if(class(FEMbasis$mesh) == "mesh.2.5D" || class(FEMbasis$mesh) == "mesh.3D"){
+  #     if(nrow(observations) > FEMbasis$mesh$nnodes)
+  #       stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
+  #   }
+  # }
   if(!is.null(locations))
   {
     if(ncol(locations) != ndim)
       stop("'locations' must be a ndim-columns matrix;")
     if(nrow(locations) != nrow(observations))
       stop("'locations' and 'observations' have incompatible size;")
-     if(dim(locations)[1]==dim(FEMbasis$mesh$nodes)[1] & dim(locations)[2]==dim(FEMbasis$mesh$nodes)[2] & !(sum(abs(locations[,1]))==sum(abs(FEMbasis$mesh$nodes[,1])) & sum(abs(locations[,2]))==sum(abs(FEMbasis$mesh$nodes[,2]))) )
+    if(dim(locations)[1]==dim(FEMbasis$mesh$nodes)[1] & dim(locations)[2]==dim(FEMbasis$mesh$nodes)[2] & !(sum(abs(locations[,1]))==sum(abs(FEMbasis$mesh$nodes[,1])) & sum(abs(locations[,2]))==sum(abs(FEMbasis$mesh$nodes[,2]))) )
       warning("The locations matrix has the same dimensions as the mesh nodes. If the locations you are using are the mesh nodes, set locations=NULL instead")
   }
+
   if(ncol(lambda) != 1)
     stop("'lambda' must be a column vector")
   if(nrow(lambda) < 1)
     stop("'lambda' must contain at least one element")
+
   if(!is.null(covariates))
   {
-    if(nrow(covariates) != nrow(observations))
+    if(nrow(covariates) != nrow(observations)*ncol(observations))
       stop("'covariates' and 'observations' have incompatible size;")
   }
+
+  ###### added but may be changed after deciding mandatory options
+  if(!is.null(random_effect)) {
+    if (ncol(covariates) < length(random_effect)) {
+      stop("'random_effect' has out of range index")
+    }
+
+    # check whether the index in random_effect vectors are appropriate
+    cov_ind= seq(length.out=dim(covariates)[2])
+    for (i in 1:length(random_effect)) {
+      if(!(random_effect[i] %in% cov_ind)) {
+        stop("'random_effect' has out of range index")
+      }
+    }
+  }
+
 
   if (!is.null(incidence_matrix))
   {
@@ -233,10 +254,10 @@ checkSmoothingParametersSize<-function(locations = NULL, observations, FEMbasis,
   {
     if(GCV==FALSE)
       warning("GCV=FALSE. DOF_matrix is passed but GCV is not computed")
-    if(ncol(DOF_matrix)!=1)
-      stop("'DOF_matrix' must be a column vector")
     if(nrow(DOF_matrix)!=length(lambdaS))
       stop("The number of rows of DOF_matrix is different from the number of lambdaS")
+    if(ncol(DOF_matrix)!=length(lambdaT))
+      stop("The number of columns of DOF_matrix is different from the number of lambdaT")
   }
 
 }
