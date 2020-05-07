@@ -172,12 +172,7 @@ CPP_smooth.volume.FEM.time<-function(locations, time_locations, observations, FE
 
   ## Call C++ function
   bigsol <- .Call("regression_Laplace_time", locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$mesh$order, mydim, ndim, lambdaS, lambdaT, covariates,
-    incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
-<<<<<<< Updated upstream
-    IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search, package = "fdaPDE")
-=======
-    IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search, bary.locations, PACKAGE = "fdaPDE")
->>>>>>> Stashed changes
+    incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search, bary.locations, PACKAGE = "fdaPDE")
 
   return(c(bigsol,ICsol))
 }
