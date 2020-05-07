@@ -219,17 +219,17 @@ CPP_eval.manifold.FEM.time = function(FEM.time, locations, time_locations, incid
     barycenters <- as.matrix(bary.locations$barycenters)
   }
 
- if (search == 1) { #use Naive search
-    print('This is Naive Search')
-  } else if (search == 2)  { #use Tree search (default)
-    print('This is Tree Search')
-  }
+ # if (search == 1) { #use Naive search
+ #    print('This is Naive Search')
+ #  } else if (search == 2)  { #use Tree search (default)
+ #    print('This is Tree Search')
+ #  }
 
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))
   for (i in 1:ncol(coeff)){
     evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM.time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
-                         FEMbasis$order, redundancy, FLAG_PARABOLIC, mydim, ndim, search, bary.locations, package = "fdaPDE")
+                         FEMbasis$order, redundancy, FLAG_PARABOLIC, mydim, ndim, search, bary.locations, PACKAGE = "fdaPDE")
   }
 
   #Returning the evaluation matrix

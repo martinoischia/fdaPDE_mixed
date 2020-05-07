@@ -26,6 +26,11 @@
 #' "Stochastic". If set to "Exact" the algoritm performs an exact (but possibly slow) computation 
 #' of the GCV index. If set to "Stochastic" the GCV is approximated by a stochastic algorithm.
 #' @param nrealizations The number of realizations to be used in the stochastic algorithm for the estimation of GCV.
+#' @param search a flag to decide the search algorithm type (tree or naive or walking search algorithm).
+#' @param bary.locations A list with three vectors:
+#'  \code{locations}, location points which are same as the given locations options. (checks whether both locations are the same);
+#'  \code{element ids}, a vector of element id of the points from the mesh where they are located;
+#'  \code{barycenters}, a vector of barycenter of points from the located element.
 #' @return A list with the following variables:
 #' \itemize{
 #' \item{\code{loadings.FEM}}{A \code{FEM} object that represents the L^2-normalized functional loadings for each 
@@ -35,11 +40,12 @@
 #' chosen for that Principal Component.}
 #' \item{\code{variance_explained}}{A vector of length #PrincipalComponents where each value represent the variance explained by that component.}
 #' \item{\code{cumsum_percentage}}{A vector of length #PrincipalComponents containing the cumulative percentage of the variance explained by the first components.}
+#' \item{\code{bary.locations}}{A barycenter information of the given locations if the locations are not mesh nodes.}
 #' }
 #' @description This function implements a smooth functional principal component analysis over a planar mesh, 
 #' a smooth manifold or a volume. 
-#' @usage FPCA.FEM(locations = NULL, datamatrix, FEMbasis, lambda, nPC=1, 
-#'          validation = NULL, NFolds = 5, GCVmethod = "Stochastic", nrealizations = 100)
+#' @usage FPCA.FEM(locations = NULL, datamatrix, FEMbasis, lambda, nPC = 1, validation = NULL, NFolds = 5, 
+#'                  GCVmethod = "Stochastic", nrealizations = 100, search = "tree", bary.locations = NULL)
 #' @references Lila, E., Aston, J.A.D.,  Sangalli, L.M., 2016a. Smooth Principal Component Analysis over two-dimensional 
 #' manifolds with an application to neuroimaging. Ann. Appl. Stat., 10(4), pp. 1854-1879. 
 #' @export
@@ -79,8 +85,8 @@
 #' ## Plot the functional loadings of the estimated Principal Components                           
 #' plot(FPCA_solution$loadings.FEM)
 
-FPCA.FEM<-function(locations = NULL, bary.locations = NULL, datamatrix, FEMbasis, lambda, nPC = 1, validation = NULL, NFolds = 5, 
-                   GCVmethod = "Stochastic", nrealizations = 100, search = "tree")
+FPCA.FEM<-function(locations = NULL, datamatrix, FEMbasis, lambda, nPC = 1, validation = NULL, NFolds = 5, 
+                   GCVmethod = "Stochastic", nrealizations = 100, search = "tree", bary.locations = NULL)
 {
   incidence_matrix=NULL # if areal fpca will be included in release, this should be put in the input
   
@@ -113,8 +119,14 @@ FPCA.FEM<-function(locations = NULL, bary.locations = NULL, datamatrix, FEMbasis
     stop("search must be either tree or naive.")
   }
 ##################### Checking parameters, sizes and conversion ################################
+  #if locations is null but bary.locations is not null, use the locations in bary.locations
+  if(is.null(locations) & !is.null(bary.locations)) {
+    locations = bary.locations$locations
+    locations = as.matrix(locations)
+  }
 
-  checkSmoothingParametersFPCA(locations=locations, datamatrix=datamatrix, FEMbasis=FEMbasis, incidence_matrix=incidence_matrix, lambda=lambda, nPC=nPC, validation=validation, NFolds=NFolds, GCVmethod=GCVmethod ,nrealizations=nrealizations,search=search)
+  checkSmoothingParametersFPCA(locations=locations, datamatrix=datamatrix, FEMbasis=FEMbasis, incidence_matrix=incidence_matrix, lambda=lambda, nPC=nPC, validation=validation, NFolds=NFolds, GCVmethod=GCVmethod ,nrealizations=nrealizations,search=search, bary.locations=bary.locations)
+
   ## Coverting to format for internal usage
   if(!is.null(locations))
     locations = as.matrix(locations)
@@ -125,6 +137,22 @@ FPCA.FEM<-function(locations = NULL, bary.locations = NULL, datamatrix, FEMbasis
   
   checkSmoothingParametersSizeFPCA(locations=locations, datamatrix=datamatrix, FEMbasis=FEMbasis, incidence_matrix=incidence_matrix, lambda=lambda, ndim=ndim, mydim=mydim, validation=validation, NFolds=NFolds)
   
+  # Check whether the locations coincide with the mesh nodes (should be put after all the validations)
+  if (!is.null(locations)) {
+    if(dim(locations)[1]==dim(FEMbasis$mesh$nodes)[1] & dim(locations)[2]==dim(FEMbasis$mesh$nodes)[2]) {
+      sum1=0
+      sum2=0
+      for (i in 1:nrow(locations)) {
+      sum1 = sum1 + abs(locations[i,1]-FEMbasis$mesh$nodes[i,1])
+      sum2 = sum2 + abs(locations[i,2]-FEMbasis$mesh$nodes[i,2])
+      }
+      if (sum1==0 & sum2==0) {
+        message("No search algorithm is used because the locations coincide with the nodes.")
+        locations = NULL #In principle, R uses pass-by-value semantics in its function calls. So put ouside of checkSmoothingParameters function.
+      }
+    }
+  }
+
 	  ################## End checking parameters, sizes and conversion #############################
   
   bigsol = NULL
@@ -146,6 +174,24 @@ FPCA.FEM<-function(locations = NULL, bary.locations = NULL, datamatrix, FEMbasis
   }
   
   loadings=bigsol[[1]]
+   # Save information of Tree Mesh
+    tree_mesh = list(
+    treelev = bigsol[[7]][1],
+    header_orig= bigsol[[8]], 
+    header_scale = bigsol[[9]],
+    node_id = bigsol[[10]][,1],
+    node_left_child = bigsol[[10]][,2],
+    node_right_child = bigsol[[10]][,3],
+    node_box= bigsol[[11]])
+
+
+ # Reconstruct FEMbasis with tree mesh
+  mesh.class= class(FEMbasis$mesh)
+  if (is.null(FEMbasis$mesh$treelev)) { #if doesn't exist the tree information
+    FEMbasis$mesh = append(FEMbasis$mesh, tree_mesh)
+  } #if already exist the tree information, don't append
+  class(FEMbasis$mesh) = mesh.class 
+
   loadings.FEM=FEM(loadings,FEMbasis)
   
   scores=bigsol[[2]]
@@ -158,40 +204,13 @@ FPCA.FEM<-function(locations = NULL, bary.locations = NULL, datamatrix, FEMbasis
   
   var=bigsol[[6]]
 
-  # Save information of Tree Mesh
-  tree_mesh = list(
-    treeloc = bigsol[[7]][1],
-    treelev = bigsol[[7]][2],
-    ndimp = bigsol[[7]][3],
-    ndimt = bigsol[[7]][4],
-    nele = bigsol[[7]][5],
-    iava = bigsol[[7]][6],
-    iend =bigsol[[7]][7],
-    header_orig= bigsol[[8]], 
-    header_scale = bigsol[[9]],
-    node_id = bigsol[[10]][,1],
-    node_left_child = bigsol[[10]][,2],
-    node_right_child = bigsol[[10]][,3],
-    node_box= bigsol[[11]])
 
-  if (class(FEMbasis) != "treeFEMbasis") {
-    treeFEMbasis = FEMbasis
-    treeFEMbasis$mesh = append(FEMbasis$mesh, tree_mesh)
-    class(treeFEMbasis$mesh) = class(FEMbasis$mesh)
-    class(treeFEMbasis) = "treeFEMbasis"
-  }
 
   # Save information of Barycenter
   bary.locations = list(barycenters = bigsol[[12]], element_ids = bigsol[[13]])
   class(bary.locations) = "bary.locations"
 
-  if (class(FEMbasis) != "treeFEMbasis") {
-    reslist=list(loadings.FEM=loadings.FEM, treeFEMbasis = treeFEMbasis, bary.locations = bary.locations, 
-    scores=scores, lambda=lambda, variance_explained=variance_explained, cumsum_percentage=cumsum_percentage)
-    } else { #already exists treeFEMbasis
-      reslist=list(loadings.FEM=loadings.FEM, bary.locations = bary.locations, 
-    scores=scores, lambda=lambda, variance_explained=variance_explained, cumsum_percentage=cumsum_percentage)
-  }
+    reslist=list(loadings.FEM=loadings.FEM, scores=scores, lambda=lambda, variance_explained=variance_explained, cumsum_percentage=cumsum_percentage, bary.locations = bary.locations)
   
   return(reslist)
 }

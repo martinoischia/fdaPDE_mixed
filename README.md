@@ -11,7 +11,7 @@ Image.FEM has been restored. Bugs in fPCA, boundary conditions and space-varying
 Compiled in both Win RStudio and Ubuntu 18.04 using g++ compiler. If using a Linux machine, it is advisable to install rgl, plot3D and plot3Drgl before fdaPDE.
 
 ## Subfolder structure:
-/src contains all C++ code and a special file named Makevars necessary to build and install the R package, 
+/src contains all C++ code and a special file named Makevars necessary to build and install the R package,
 /R contains the R functions that wrap the C++ calls,
 /tests contains a script to test the package,
 /data contains the data to run the tests in /tests.
@@ -19,5 +19,3 @@ Compiled in both Win RStudio and Ubuntu 18.04 using g++ compiler. If using a Lin
 ## Remarks:
 
 1) the shift of indexes from R to C++ is done within the R functions smooth.FEM and FPCA.FEM Do not use C++ scripts directly on the R mesh objects, unless you take care of shifing indexes by yourself.
-
-2) This repo contains the code version using MUMPS.

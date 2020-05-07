@@ -4,10 +4,12 @@
 \alias{create.FEM.basis}
 \title{Create a FEM basis}
 \usage{
-create.FEM.basis(mesh)
+create.FEM.basis(mesh, saveTree = FALSE)
 }
 \arguments{
 \item{mesh}{A \code{mesh.2D}, \code{mesh.2.5D} or \code{mesh.3D} object representing the domain triangulation. See \link{create.mesh.2D}, \link{create.mesh.2.5D}, \link{create.mesh.3D}.}
+
+\item{saveTree}{a flag to decide to save the tree mesh information in advance (default is FALSE)}
 }
 \value{
 A \code{FEMbasis} object. This contains the \code{mesh}, along with some additional quantities:
@@ -30,6 +32,7 @@ as input.
 The basis' functions are globally continuos functions, that are polynomials once restricted to a triangle in the mesh.
 The current implementation includes linear finite elements (when \code{order = 1} in the input \code{mesh}) and
 quadratic finite elements (when \code{order = 2} in the input \code{mesh}).
+If saveTree flag is TRUE, it saves the tree mesh information in advance inside mesh object and can be used later on to save mesh construction time.
 }
 \examples{
 ## Upload the quasicircle2D data

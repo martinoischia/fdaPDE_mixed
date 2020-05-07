@@ -4,8 +4,8 @@
 \alias{FPCA.FEM}
 \title{Smooth Functional Principal Component Analysis}
 \usage{
-FPCA.FEM(locations = NULL, datamatrix, FEMbasis, lambda, nPC=1, 
-         validation = NULL, NFolds = 5, GCVmethod = "Stochastic", nrealizations = 100)
+FPCA.FEM(locations = NULL, datamatrix, FEMbasis, lambda, nPC = 1, validation = NULL, NFolds = 5, 
+                 GCVmethod = "Stochastic", nrealizations = 100, search = "tree", bary.locations = NULL)
 }
 \arguments{
 \item{locations}{A #observations-by-2 matrix in the 2D case and #observations-by-3 matrix in the 2.5D and 3D case, where 
@@ -42,6 +42,13 @@ selection of the best parameter \code{lambda} is chosen. Default value is 5.}
 of the GCV index. If set to "Stochastic" the GCV is approximated by a stochastic algorithm.}
 
 \item{nrealizations}{The number of realizations to be used in the stochastic algorithm for the estimation of GCV.}
+
+\item{search}{a flag to decide the search algorithm type (tree or naive or walking search algorithm).}
+
+\item{bary.locations}{A list with three vectors:
+\code{locations}, location points which are same as the given locations options. (checks whether both locations are the same);
+\code{element ids}, a vector of element id of the points from the mesh where they are located;
+\code{barycenters}, a vector of barycenter of points from the located element.}
 }
 \value{
 A list with the following variables:
@@ -53,6 +60,7 @@ Principal Component computed.}
 chosen for that Principal Component.}
 \item{\code{variance_explained}}{A vector of length #PrincipalComponents where each value represent the variance explained by that component.}
 \item{\code{cumsum_percentage}}{A vector of length #PrincipalComponents containing the cumulative percentage of the variance explained by the first components.}
+\item{\code{bary.locations}}{A barycenter information of the given locations if the locations are not mesh nodes.}
 }
 }
 \description{

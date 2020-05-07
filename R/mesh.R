@@ -419,7 +419,30 @@ create.mesh.2.5D<- function(nodes, triangles, order = 1)
   return(out)
 }
 
-points.projection.2.5D<-function(mesh, locations) {
+#' Project 3D points onto 2D 2.5D triangular mesh
+#'
+#' @param mesh A mesh.2.5D object representing the triangular mesh, created by \link{create.mesh.2.5D}.
+#' @param locations 3D points to be projected onto 2.5D triangular mesh.
+#' @description This function projects any 3D points onto 2.5D triangular mesh.
+#' @return 3D points projected onto 2.5D triangluar mesh.
+#' @export
+#' @examples
+#' library(fdaPDE)
+#'
+#' ## Upload the hub2.5D the data
+#' data(hub25Ddata)
+#'
+#' ## Create mesh
+#' mesh <- create.mesh.2.5D(nodes = nodes,triangles = triangles)
+#' 
+#' # Create 3D uniform grid points to be projected
+#' x <- seq(-3,3,by=0.6)
+#' y <- seq(-3,3,by=0.6)
+#'  z <- seq(-3,3,by=0.6)
+#' grid = expand.grid(x=x, y=y, z=z)
+#' loc = projection.points.2.5D(mesh, grid)
+
+projection.points.2.5D<-function(mesh, locations) {
   if(class(mesh) !="mesh.2.5D")
   stop("Data projection is only available for 2.5D mesh ")
 
@@ -444,7 +467,7 @@ points.projection.2.5D<-function(mesh, locations) {
   storage.mode(mesh$order) <- "integer"
 
   ## Call C++ function
-  evalmat <- .Call("points_projection", mesh, locations, package = "fdaPDE")
+  evalmat <- .Call("points_projection", mesh, locations, PACKAGE = "fdaPDE")
 
   #Returning the evaluation matrix
   return(evalmat)

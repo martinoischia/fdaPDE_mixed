@@ -1,4 +1,4 @@
-checkSmoothingParametersFPCA<-function(locations = NULL, datamatrix, FEMbasis, incidence_matrix = NULL, lambda, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100, search)
+checkSmoothingParametersFPCA<-function(locations = NULL, datamatrix, FEMbasis, incidence_matrix = NULL, lambda, nPC, validation, NFolds, GCVmethod = 2, nrealizations = 100, search, bary.locations=bary.locations)
 {
   #################### Parameter Check #########################
   if(!is.null(locations))
@@ -12,12 +12,13 @@ checkSmoothingParametersFPCA<-function(locations = NULL, datamatrix, FEMbasis, i
     # } else if (search == 2)  { #use Tree search (default)
     #   print('This is Tree Search')
     # }
+
   } # end of locations
   if (is.null(datamatrix)) 
     stop("observations required;  is NULL.")
   if (is.null(FEMbasis)) 
     stop("FEMbasis required;  is NULL.")
-  if(class(FEMbasis)!= "FEMbasis" && class(FEMbasis)!= "treeFEMbasis")
+  if(class(FEMbasis)!= "FEMbasis")
     stop("'FEMbasis' is not class 'FEMbasis'")
   
   if (!is.null(locations) && !is.null(incidence_matrix))
@@ -42,6 +43,22 @@ checkSmoothingParametersFPCA<-function(locations = NULL, datamatrix, FEMbasis, i
 
   if( !is.numeric(nrealizations) || nrealizations < 1)
     stop("nrealizations must be a positive integer")
+
+  #Check the locations in 'bary.locations' and 'locations' are the same
+  if(!is.null(bary.locations) & !is.null(locations))
+  {
+    flag=TRUE
+    for (i in 1:nrow(locations)) {
+      if (!(locations[i,1]==bary.locations$locations[i,1] & locations[i,2] == bary.locations$locations[i,2])) {
+        flag = FALSE
+        break
+      }
+    }
+
+    if (flag == FALSE) {
+      stop("Locations are not same as the one in barycenter information.")
+    }
+  }  # end of bary.locations
 
 }
 

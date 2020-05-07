@@ -199,21 +199,21 @@ diff
 # If locations in 'bary.locations' and 'locations' are the same, stops
 loc2=loc
 loc2[1,]=c(0,0)
-output_CPP2_bary = smooth.FEM.time(locations = loc2,
-                                   bary.locations =output_CPP_bary$bary.locations,
-                                   observations = tdata2, 
-                                   time_mesh = time_mesh,
-                                   FEMbasis = FEMbasis, 
-                                   lambdaS = lambdaS,
-                                   lambdaT = lambdaT, 
-                                   GCV=FALSE)
-# give error of 'Locations are not same as the one in barycenter information.'
+# output_CPP2_bary = smooth.FEM.time(locations = loc2,
+#                                    bary.locations =output_CPP_bary$bary.locations,
+#                                    observations = tdata2, 
+#                                    time_mesh = time_mesh,
+#                                    FEMbasis = FEMbasis, 
+#                                    lambdaS = lambdaS,
+#                                    lambdaT = lambdaT, 
+#                                    GCV=FALSE)
+# above command will give error of 'Locations are not same as the one in barycenter information.'
 
-points=eval.FEM.time(output_CPP_bary$fit.FEM.time,
-                     locations=loc2,
-                     bary.locations = output_CPP_bary$bary.locations,
-                     time.instants=time_mesh)
-# give error of 'Locations are not same as the one in barycenter information.'
+# points=eval.FEM.time(output_CPP_bary$fit.FEM.time,
+#                      locations=loc2,
+#                      bary.locations = output_CPP_bary$bary.locations,
+#                      time.instants=time_mesh)
+# above command will give error of 'Locations are not same as the one in barycenter information.'
 
 ### 7) If locations is null but bary.locations is not null, use the locations in bary.locations  ####
 #check that there is bary.locations information under output_CPP3_bary$bary.locations
@@ -441,21 +441,21 @@ diff
 # If locations in 'bary.locations' and 'locations' are the same, stops
 loc2=loc
 loc2[1,]=c(0,0,0)
-output_CPP2_bary = smooth.FEM.time(locations = loc2,
-                                   bary.locations =output_CPP_bary$bary.locations,
-                                   observations = tdata2, 
-                                   time_mesh = time_mesh,
-                                   FEMbasis = FEMbasis, 
-                                   lambdaS = lambdaS,
-                                   lambdaT = lambdaT, 
-                                   GCV=FALSE)
-# give error of 'Locations are not same as the one in barycenter information.'
+# output_CPP2_bary = smooth.FEM.time(locations = loc2,
+#                                    bary.locations =output_CPP_bary$bary.locations,
+#                                    observations = tdata2, 
+#                                    time_mesh = time_mesh,
+#                                    FEMbasis = FEMbasis, 
+#                                    lambdaS = lambdaS,
+#                                    lambdaT = lambdaT, 
+#                                    GCV=FALSE)
+# above command will give error of 'Locations are not same as the one in barycenter information.'
 
-points=eval.FEM.time(output_CPP_bary$fit.FEM.time,
-                     locations=loc2,
-                     bary.locations = output_CPP_bary$bary.locations,
-                     time.instants=time_mesh)
-# give error of 'Locations are not same as the one in barycenter information.'
+# points=eval.FEM.time(output_CPP_bary$fit.FEM.time,
+#                      locations=loc2,
+#                      bary.locations = output_CPP_bary$bary.locations,
+#                      time.instants=time_mesh)
+# above command will give error of 'Locations are not same as the one in barycenter information.'
 
 ### 7) If locations is null but bary.locations is not null, use the locations in bary.locations  ####
 #check that there is bary.locations information under output_CPP3_bary$bary.locations
@@ -695,21 +695,21 @@ diff
 ### 6) Location comparison in locations vs bary.locations ####
 loc2=loc
 loc2[1,]=c(0,0,0)
-output_CPP2_bary = smooth.FEM.time(locations = loc2,
-                                   bary.locations =output_CPP_bary$bary.locations,
-                                   observations = tdata2, 
-                                   time_mesh = time_mesh,
-                                   FEMbasis = FEMbasis, 
-                                   lambdaS = lambdaS,
-                                   lambdaT = lambdaT, 
-                                   GCV=FALSE)
-# give error of 'Locations are not same as the one in barycenter information.'
+# output_CPP2_bary = smooth.FEM.time(locations = loc2,
+#                                    bary.locations =output_CPP_bary$bary.locations,
+#                                    observations = tdata2, 
+#                                    time_mesh = time_mesh,
+#                                    FEMbasis = FEMbasis, 
+#                                    lambdaS = lambdaS,
+#                                    lambdaT = lambdaT, 
+#                                    GCV=FALSE)
+# above command will give error of 'Locations are not same as the one in barycenter information.'
 
-points=eval.FEM.time(output_CPP_bary$fit.FEM.time,
-                     locations=loc2,
-                     bary.locations = output_CPP_bary$bary.locations,
-                     time.instants=time_mesh)
-# give error of 'Locations are not same as the one in barycenter information.'
+# points=eval.FEM.time(output_CPP_bary$fit.FEM.time,
+#                      locations=loc2,
+#                      bary.locations = output_CPP_bary$bary.locations,
+#                      time.instants=time_mesh)
+# above command will give error of 'Locations are not same as the one in barycenter information.'
 
 ### 7) If locations is null but bary.locations is not null, use the locations in bary.locations  ####
 #check that there is bary.locations information under output_CPP3_bary$bary.locations

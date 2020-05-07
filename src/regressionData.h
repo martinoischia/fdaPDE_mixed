@@ -40,7 +40,6 @@ class  RegressionData{
 
 		//Other parameters
 		UInt order_;
-		UInt num_units_;
 
 		std::vector<Real> lambdaS_; //space penalization
 		std::vector<Real> lambdaT_;	//time penalization
@@ -60,7 +59,6 @@ class  RegressionData{
 		MatrixXr dof_matrix_;
 
 		bool flag_SpaceTime_; // TRUE if space time smoothing
-		bool flag_Mixed_; // TRUE if mixed smoothing
 
 
 
@@ -106,28 +104,16 @@ class  RegressionData{
 
 
 		#ifdef R_VERSION_
-		// space case
-		explicit RegressionData(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP Rcovariates,
+		explicit RegressionData(SEXP Rlocations, SEXP RbaryLocations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP Rcovariates,
 								SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP GCV, SEXP RGCVmethod,
-								SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations);
-		// space-mixed case
-		explicit RegressionData(SEXP Rlocations, SEXP Robservations, SEXP RnumUnits, SEXP Rorder, SEXP RlambdaS, SEXP Rcovariates,
-								SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP GCV, SEXP RGCVmethod,
-								SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations);
-		
-		// space-time case
-		explicit RegressionData(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP Rcovariates,
+								SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch);
+		explicit RegressionData(SEXP Rlocations, SEXP RbaryLocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP Rcovariates,
 						SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP GCV, SEXP RGCVmethod,
-						SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations);
+						SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch);
 		#endif
 
-		// space case
 		explicit RegressionData(std::vector<Point>& locations, VectorXr& observations, UInt order, std::vector<Real> lambdaS, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF, bool GCV,  UInt search);
 
-		// space-mixed case
-		explicit RegressionData(std::vector<Point>& locations, VectorXr& observations, UInt num_units, UInt order, std::vector<Real> lambdaS, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF, bool GCV,  UInt search);
-
-		// space-time case
 		explicit RegressionData(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order,
 														std::vector<Real>& lambdaS, std::vector<Real>& lambdaT, MatrixXr& covariates, MatrixXi& incidenceMatrix,
 														std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, VectorXr& ic, bool flag_mass, bool flag_parabolic, bool DOF, bool GCV,  UInt search);
@@ -146,12 +132,8 @@ class  RegressionData{
 		inline MatrixXi const & getIncidenceMatrix() const {return incidenceMatrix_;}
 		//! A method returning the number of observations
 		inline UInt const getNumberofObservations() const {return observations_.size();}
-		//! A method returning the number of observations for each statistical units (assumes the same spatial locations) 
-		inline UInt const getNumberofMixedObservations() const {return observations_.size()/num_units_;}
 		//! A method returning the number of space observations
 		inline UInt const getNumberofSpaceObservations() const {return observations_.size()/time_locations_.size();}
-		//! A method returning the number of statistical units for mixed effect
-		inline UInt const getNumberofUnits() const {return num_units_;}
 		//! A method returning the number of time observations
 		inline UInt const getNumberofTimeObservations() const {return time_locations_.size();}
 		//! A method returning the locations of the observations
@@ -171,7 +153,6 @@ class  RegressionData{
 		inline std::vector<Real> const & getLambdaS() const {return lambdaS_;}
 		//! A method returning the the time penalization term
 		inline std::vector<Real> const & getLambdaT() const {return lambdaT_;}
-		inline bool const & isMixed() const {return flag_Mixed_;}
 		inline bool const & isSpaceTime() const {return flag_SpaceTime_;}
 		inline bool const & getFlagMass() const {return flag_mass_;}
 		inline bool const & getFlagParabolic() const {return flag_parabolic_;}
@@ -230,33 +211,20 @@ class  RegressionDataElliptic:public RegressionData
 	        \param Rsearch an R-integer to decide the search algorithm type (tree or naive or walking search algorithm).
 		*/
 		#ifdef R_VERSION_
-		// space case
-		explicit RegressionDataElliptic(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RK,
+		explicit RegressionDataElliptic(SEXP Rlocations, SEXP RbaryLocations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RK,
 				SEXP Rbeta, SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues,
-				SEXP GCV,SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations);
-		//space-mixed case
-		explicit RegressionDataElliptic(SEXP Rlocations, SEXP Robservations, SEXP RnumUnits, SEXP Rorder, SEXP RlambdaS, SEXP RK,
-				SEXP Rbeta, SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues,
-				SEXP GCV,SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations);
-		//space-time case
-		explicit RegressionDataElliptic(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
+				SEXP GCV,SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch);
+		explicit RegressionDataElliptic(SEXP Rlocations, SEXP RbaryLocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
 				SEXP Rbeta, SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric,
-				SEXP GCV,SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations);
+				SEXP GCV,SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch);
 		#endif
 
-		// space case
 		explicit RegressionDataElliptic(std::vector<Point>& locations, VectorXr& observations, UInt order,
 										std::vector<Real> lambdaS, Eigen::Matrix<Real,2,2>& K,
 										Eigen::Matrix<Real,2,1>& beta, Real c, MatrixXr& covariates,
 										MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices,
 										std::vector<Real>& bc_values, bool DOF, bool GCV, UInt search);
-		// space-mixed case
-		explicit RegressionDataElliptic(std::vector<Point>& locations, VectorXr& observations, UInt num_units, UInt order,
-										std::vector<Real> lambdaS, Eigen::Matrix<Real,2,2>& K,
-										Eigen::Matrix<Real,2,1>& beta, Real c, MatrixXr& covariates,
-										MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices,
-										std::vector<Real>& bc_values, bool DOF, bool GCV, UInt search);
-		//space-time case
+
 		explicit RegressionDataElliptic(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order,
 										std::vector<Real>& lambdaS, std::vector<Real>& lambdaT, Eigen::Matrix<Real,2,2>& K,	Eigen::Matrix<Real,2,1>& beta, Real c,
 										MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices,	std::vector<Real>& bc_values, VectorXr& ic,
@@ -300,24 +268,15 @@ class RegressionDataEllipticSpaceVarying:public RegressionData
 
 		*/
 		#ifdef R_VERSION_
-		// space case
-		explicit RegressionDataEllipticSpaceVarying(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS,
+		explicit RegressionDataEllipticSpaceVarying(SEXP Rlocations, SEXP RbaryLocations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS,
 				SEXP RK, SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices,
-				SEXP RBCValues, SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix,SEXP Rsearch, SEXP RbaryLocations);
-		
-		// space-mixed case
-		explicit RegressionDataEllipticSpaceVarying(SEXP Rlocations, SEXP Robservations, SEXP RnumUnits, SEXP Rorder, SEXP RlambdaS,
-				SEXP RK, SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices,
-				SEXP RBCValues, SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations);
-		
-		// space-time case
-		explicit RegressionDataEllipticSpaceVarying(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
+				SEXP RBCValues, SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix,SEXP Rsearch);
+				explicit RegressionDataEllipticSpaceVarying(SEXP Rlocations, SEXP RbaryLocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
 					  SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric,
-					  SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations);
+					  SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch);
 		#endif
 
 
-		//space case
 		explicit RegressionDataEllipticSpaceVarying(std::vector<Point>& locations, VectorXr& observations,
 													UInt order, std::vector<Real> lambdaS,
 													const std::vector<Eigen::Matrix<Real,2,2>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,2> > >& K,
@@ -326,17 +285,7 @@ class RegressionDataEllipticSpaceVarying:public RegressionData
 													MatrixXr& covariates, MatrixXi& incidenceMatrix,
 													std::vector<UInt>& bc_indices, std::vector<Real>& bc_values,
 													bool DOF, bool GCV, UInt search);
-		//space-mixed case
-		explicit RegressionDataEllipticSpaceVarying(std::vector<Point>& locations, VectorXr& observations, UInt num_units,
-													UInt order, std::vector<Real> lambdaS,
-													const std::vector<Eigen::Matrix<Real,2,2>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,2> > >& K,
-													const std::vector<Eigen::Matrix<Real,2,1>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,1> > >& beta,
-													const std::vector<Real>& c, const std::vector<Real>& u,
-													MatrixXr& covariates, MatrixXi& incidenceMatrix,
-													std::vector<UInt>& bc_indices, std::vector<Real>& bc_values,
-													bool DOF, bool GCV, UInt search);
 
-		// space-time case
 		explicit RegressionDataEllipticSpaceVarying(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order,
 													std::vector<Real>& lambdaS, std::vector<Real>& lambdaT,
 													const std::vector<Eigen::Matrix<Real,2,2>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,2> > >& K,

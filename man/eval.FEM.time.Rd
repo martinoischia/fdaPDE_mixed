@@ -4,7 +4,7 @@
 \alias{eval.FEM.time}
 \title{Evaluate a FEM.time object at a set of point locations}
 \usage{
-eval.FEM.time(FEM.time, locations, incidence_matrix=NULL)
+eval.FEM.time(FEM.time, locations=NULL, time.instants=NULL, space.time.locations=NULL, incidence_matrix = NULL,lambdaS=1,lambdaT=1, search = "tree", bary.locations=NULL)
 }
 \arguments{
 \item{FEM.time}{A \code{FEM.time} object to be evaluated.}
@@ -12,6 +12,13 @@ eval.FEM.time(FEM.time, locations, incidence_matrix=NULL)
 \item{locations}{A 3-columns(in case of planar mesh) or 4-columns(in case of 2D manifold in a 3D space or a 3D volume) matrix with the time and spatial locations where the FEM.time object should be evaluated.}
 
 \item{incidence_matrix}{In case of areal data, the #regions x #elements incidence matrix defining the regions}
+
+\item{search}{a flag to decide the search algorithm type (tree or naive or walking search algorithm).}
+
+\item{bary.locations}{A list with three vectors:
+\code{locations}, location points which are same as the given locations options. (checks whether both locations are the same);
+\code{element ids}, a vector of element id of the points from the mesh where they are located;
+\code{barycenters}, a vector of barycenter of points from the located element.}
 }
 \value{
 A matrix of numeric evaluations of the \code{FEM.time} object. Each row indicates the location where the evaluation has been taken, the column indicates the
