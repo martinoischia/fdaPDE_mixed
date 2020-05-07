@@ -1,4 +1,4 @@
-checkSmoothingParameters_mixed<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, random_effect, incidence_matrix = NULL, BC = NULL, GCV = FALSE, PDE_parameters=NULL, GCVmethod = 2, nrealizations = 100, search, bary.locations=bary.locations)
+checkSmoothingParameters_mixed<-function(locations = NULL, observations, FEMbasis, lambda, covariates, random_effect = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, PDE_parameters=NULL, GCVmethod = 2, nrealizations = 100, search, bary.locations=bary.locations)
 {
   #################### Parameter Check #########################
 
@@ -26,6 +26,9 @@ checkSmoothingParameters_mixed<-function(locations = NULL, observations, FEMbasi
 
   if (is.null(observations))
     stop("observations required;  is NULL.")
+
+  if (is.null(covariates))
+    stop("covariates required;  is NULL.")
 
   if (is.null(lambda))
     stop("lambda required;  is NULL.")
@@ -122,7 +125,7 @@ checkSmoothingParameters_mixed<-function(locations = NULL, observations, FEMbasi
   ans
 }
 
-checkSmoothingParametersSize_mixed<-function(locations = NULL, observations, FEMbasis, lambda, covariates = NULL, random_effect, incidence_matrix = NULL, BC = NULL, GCV = FALSE, DOF=FALSE, DOF_matrix=NULL, space_varying=FALSE, PDE_parameters = NULL, ndim, mydim)
+checkSmoothingParametersSize_mixed<-function(locations = NULL, observations, FEMbasis, lambda, covariates, random_effect = NULL, incidence_matrix = NULL, BC = NULL, GCV = FALSE, DOF=FALSE, DOF_matrix=NULL, space_varying=FALSE, PDE_parameters = NULL, ndim, mydim)
 {
   #################### Parameter Check #########################
   if(ncol(observations) < 1)
@@ -163,7 +166,7 @@ checkSmoothingParametersSize_mixed<-function(locations = NULL, observations, FEM
   ###### added but may be changed after deciding mandatory options
   if(!is.null(random_effect)) {
     if (ncol(covariates) < length(random_effect)) {
-      stop("'random_effect' has incompatible size")
+      stop("'random_effect' has out of range index")
     }
 
     # check whether the index in random_effect vectors are appropriate

@@ -1,6 +1,7 @@
 #' Create a FEM basis
 #'
 #' @param mesh A \code{mesh.2D}, \code{mesh.2.5D} or \code{mesh.3D} object representing the domain triangulation. See \link{create.mesh.2D}, \link{create.mesh.2.5D}, \link{create.mesh.3D}.
+#' @param saveTree a flag to decide to save the tree mesh information in advance (default is FALSE)
 #' @return A \code{FEMbasis} object. This contains the \code{mesh}, along with some additional quantities:
 #' \itemize{
 #' 	\item{\code{order}}{Either "1" or "2" for the 2D and 2.5D case, and "1" for the 3D case.
@@ -19,7 +20,8 @@
 #' The basis' functions are globally continuos functions, that are polynomials once restricted to a triangle in the mesh.
 #' The current implementation includes linear finite elements (when \code{order = 1} in the input \code{mesh}) and
 #' quadratic finite elements (when \code{order = 2} in the input \code{mesh}).
-#' @usage create.FEM.basis(mesh)
+#' If saveTree flag is TRUE, it saves the tree mesh information in advance inside mesh object and can be used later on to save mesh construction time.
+#' @usage create.FEM.basis(mesh, saveTree = FALSE)
 #' @seealso \code{\link{create.mesh.2D}}, \code{\link{create.mesh.2.5D}},\code{\link{create.mesh.3D}}
 #' @examples
 #' ## Upload the quasicircle2D data
@@ -78,10 +80,10 @@ create.FEM.basis = function(mesh, saveTree = FALSE)
       storage.mode(myDim) <- "integer"
       storage.mode(nDim) <- "integer"
 
-      bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, package = "fdaPDE")
+      bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, PACKAGE = "fdaPDE")
       tree_mesh = list(
       treelev = bigsol[[1]][1],
-      header_orig= bigsol[[2]], 
+      header_orig= bigsol[[2]],
       header_scale = bigsol[[3]],
       node_id = bigsol[[4]][,1],
       node_left_child = bigsol[[4]][,2],
@@ -93,7 +95,7 @@ create.FEM.basis = function(mesh, saveTree = FALSE)
       mesh = append(orig_mesh, tree_mesh)
       class(mesh) = mesh.class
   }
-      
+
   FEMbasis = list(mesh = mesh, order = as.integer(mesh$order), nbasis = nbasis, detJ=eleProp$detJ, transf_coord = eleProp$transf_coord)
   class(FEMbasis) = "FEMbasis"
 
@@ -141,10 +143,10 @@ create.FEM.basis = function(mesh, saveTree = FALSE)
         }
 
 
-        bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, package = "fdaPDE")
+        bigsol <- .Call("tree_mesh_construction", mesh, mesh$order, myDim, nDim, PACKAGE = "fdaPDE")
         tree_mesh = list(
         treelev = bigsol[[1]][1],
-        header_orig= bigsol[[2]], 
+        header_orig= bigsol[[2]],
         header_scale = bigsol[[3]],
         node_id = bigsol[[4]][,1],
         node_left_child = bigsol[[4]][,2],
@@ -156,8 +158,8 @@ create.FEM.basis = function(mesh, saveTree = FALSE)
         mesh = append(orig_mesh, tree_mesh)
         class(mesh) = mesh.class
       }
-    
-  	  FEMbasis = list(mesh = mesh, order = as.integer(mesh$order),nbasis = mesh$nnodes)
+
+  	  FEMbasis = list(mesh = mesh, order = as.integer(mesh$order), nbasis = mesh$nnodes)
   	  class(FEMbasis) = "FEMbasis"
   	  FEMbasis
   }
@@ -207,6 +209,23 @@ FEM<-function(coeff,FEMbasis)
   return(fclass)
 }
 
+FEM.mixed<-function(coeff,num_units,FEMbasis)
+{
+  if (is.null(coeff))
+    stop("coeff required;  is NULL.")
+  if (is.null(FEMbasis))
+    stop("FEMbasis required;  is NULL.")
+  if(class(FEMbasis) != "FEMbasis")
+    stop("FEMbasis not of class 'FEMbasis'")
+  if(dim(coeff)[1] != (FEMbasis$nbasis*num_units))
+    stop("Number of row of 'coeff' different from number of basis*number of statistical units")
+
+  fclass = NULL
+  fclass = list(coeff=coeff, num_units=num_units, FEMbasis=FEMbasis)
+  class(fclass)<-"FEM.mixed"
+  return(fclass)
+}
+
 #' Define a spatio-temporal field by a Finite Element basis expansion
 #'
 #' @param coeff A vector or a matrix containing the coefficients for the spatio-temporal basis expansion. The number of rows
@@ -215,7 +234,7 @@ FEM<-function(coeff,FEMbasis)
 #' @param time_mesh A vector containing the b-splines knots for separable smoothing and the nodes for finite differences for parabolic smoothing
 #' @param FLAG_PARABOLIC Boolean. If \code{TRUE} the coefficients are from parabolic smoothing, if \code{FALSE} the separable one.
 #' @description This function defines a FEM.time object.
-#' @usage FEM.time(coeff,mesh_time,FEMbasis,FLAG_PARABOLIC=FALSE)
+#' @usage FEM.time(coeff,time_mesh,FEMbasis,FLAG_PARABOLIC=FALSE)
 #' @return A \code{FEM.time} object. This contains a list with components \code{coeff}, \code{mesh_time}, \code{FEMbasis} and \code{FLAG_PARABOLIC}.
 #' @examples
 #' library(fdaPDE)

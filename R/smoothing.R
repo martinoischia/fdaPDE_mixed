@@ -56,6 +56,11 @@
 #' of the GCV index. If set to "Stochastic" the GCV is approximated by a stochastic algorithm.
 #' @param nrealizations This parameter is considered only when \code{GCV=TRUE} and \code{GCVmethod = "Stochastic"}.
 #' It is a positive integer that represents the number of uniform random variables used in stochastic GCV computation.
+#' @param search a flag to decide the search algorithm type (tree or naive or walking search algorithm).
+#' @param bary.locations A list with three vectors:
+#'  \code{locations}, location points which are same as the given locations options. (checks whether both locations are the same);
+#'  \code{element ids}, a vector of element id of the points from the mesh where they are located;
+#'  \code{barycenters}, a vector of barycenter of points from the located element.
 #' @return A list with the following variables:
 #' \itemize{
 #'    \item{\code{fit.FEM}}{A \code{FEM} object that represents the fitted spatial field.}
@@ -65,6 +70,7 @@
 #'    \item{\code{edf}}{If GCV is \code{TRUE}, a scalar or vector with the trace of the smoothing matrix for each value of the smoothing parameter specified in \code{lambda}.}
 #'    \item{\code{stderr}}{If GCV is \code{TRUE}, a scalar or vector with the estimate of the standard deviation of the error for each value of the smoothing parameter specified in \code{lambda}.}
 #'    \item{\code{GCV}}{If GCV is \code{TRUE}, a  scalar or vector with the value of the GCV criterion for each value of the smoothing parameter specified in \code{lambda}.}
+#'    \item{\code{bary.locations}}{A barycenter information of the given locations if the locations are not mesh nodes.}
 #' }
 #' @description This function implements a spatial regression model with differential regularization.
 #'  The regularizing term involves a Partial Differential Equation (PDE). In the simplest case the PDE involves only the
@@ -74,8 +80,8 @@
 #'  The technique accurately handle data distributed over irregularly shaped domains. Moreover, various conditions
 #'  can be imposed at the domain boundaries.
 #' @usage smooth.FEM(locations = NULL, observations, FEMbasis, lambda,
-#'      covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL,
-#'      BC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100)
+#'                   covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL,
+#'                   BC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL, search = "tree", bary.locations = NULL)
 #' @export
 
 #' @references
@@ -413,14 +419,12 @@ smooth.FEM<-function(locations = NULL, observations, FEMbasis, lambda,
   if (is.null(FEMbasis$mesh$treelev)) { #if doesn't exist the tree information
     FEMbasis$mesh = append(FEMbasis$mesh, tree_mesh)
   } #if already exist the tree information, don't append
-
   class(FEMbasis$mesh) = mesh.class  
 
   # Save information of Barycenter
   if (is.null(bary.locations)) {
       bary.locations = list(locations=locations, element_ids = bigsol[[11]], barycenters = bigsol[[12]])    
   }
-  
   class(bary.locations) = "bary.locations"
 
   # Make Functional objects object

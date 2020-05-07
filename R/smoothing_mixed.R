@@ -1,5 +1,5 @@
 smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
-                     covariates = NULL, random_effect = NULL, PDE_parameters=NULL, incidence_matrix = NULL,
+                     covariates, random_effect = NULL, PDE_parameters=NULL, incidence_matrix = NULL,
                      BC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL, search = "tree", bary.locations = NULL)
 {
   if(class(FEMbasis$mesh) == "mesh.2D"){
@@ -106,20 +106,33 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   #transform matrix data to vector data
   observations<-as.vector(observations)
 
-  common_cov = as.matrix(covariates[,-random_effect])
-  random_cov = as.matrix(covariates[,random_effect])
-  
+  # convert into official coeff (length: q + m*p)
   matrixV = matrix(0, N, p*m)
-  
-  for (i in 1:m) {
-    matrixV[((i-1)*n+1):(i*n), ((i-1)*p+1):(i*p)] = random_cov[((i-1)*n+1):(i*n),]
+
+  if (p<q && p!=0) { #random-effect as subset
+    common_cov = as.matrix(covariates[,-random_effect])
+    random_cov = as.matrix(covariates[,random_effect])
+    for (i in 1:m) {
+      matrixV[((i-1)*n + 1):(i*n), ((i-1)*p + 1):(i*p)] = random_cov[((i-1)*n + 1):(i*n),]
+    }
+    matrixX= cbind(common_cov,matrixV)   
+    covariates = matrixX
+
+  } else if (p==q) { #random-effect as full set
+    random_cov = as.matrix(covariates)
+    for (i in 1:m) {
+    matrixV[((i-1)*n + 1):(i*n), ((i-1)*p + 1):(i*p)] = random_cov[((i-1)*n + 1):(i*n),]
+    }
+    matrixX= matrixV
+    covariates = matrixX
+
   }
-
-  matrixX= cbind(common_cov,matrixV)
-  covariates = matrixX
+  # else if (p==0) { #no random-effect
+  #   covariates = as.matrix(covariates)
+  # }
   ### End of conversion
-
   print('********End of covariate conversion')
+
   ################## End checking parameters, sizes and conversion #############################
 
   if(class(FEMbasis$mesh) == 'mesh.2D' & is.null(PDE_parameters)){
@@ -130,8 +143,6 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
                                   covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
                                   BC=BC, GCV=GCV,GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
 
-    numnodes = nrow(FEMbasis$mesh$nodes)
-
   } else if(class(FEMbasis$mesh) == 'mesh.2D' & !is.null(PDE_parameters) & space_varying==FALSE){
 
     bigsol = NULL
@@ -141,8 +152,6 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
                                       covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
                                       BC=BC, GCV=GCV,GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
 
-    numnodes = nrow(FEMbasis$mesh$nodes)
-
   } else if(class(FEMbasis$mesh) == 'mesh.2D' & !is.null(PDE_parameters) & space_varying==TRUE){
 
     bigsol = NULL
@@ -151,9 +160,6 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
                                          PDE_parameters = PDE_parameters,
                                          covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
                                          BC=BC, GCV=GCV,GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
-
-    numnodes = nrow(FEMbasis$mesh$nodes)
-
   }
   else if(class(FEMbasis$mesh) == 'mesh.2.5D'){
 
@@ -164,9 +170,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     bigsol = CPP_smooth.manifold.FEM.mixed(locations=locations, observations=observations, num_units=num_units, FEMbasis=FEMbasis, lambda=lambda, 
                                           covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim, 
                                           BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
-
-    numnodes = FEMbasis$mesh$nnodes
-
+  
   }else if(class(FEMbasis$mesh) == 'mesh.3D'){
 
     bigsol = NULL
@@ -174,76 +178,86 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     bigsol = CPP_smooth.volume.FEM.mixed(locations=locations, observations=observations, num_units=num_units, FEMbasis=FEMbasis, lambda=lambda, 
                                         covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim, 
                                         BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
-
-    numnodes = FEMbasis$mesh$nnodes
   }
 
-  f = bigsol[[1]][1:numnodes,]
-  g = bigsol[[1]][(numnodes+1):(2*numnodes),]
+  f = bigsol[[1]][1 : (m*nrow(FEMbasis$mesh$nodes)),]
+  g = bigsol[[1]][(m*nrow(FEMbasis$mesh$nodes)+1) : (2*m*nrow(FEMbasis$mesh$nodes)),]
 
   dof = bigsol[[2]]
   GCV_ = bigsol[[3]]
   bestlambda = bigsol[[4]]+1
 
-  if(!is.null(covariates)) {
-    print('********Start of coefficient conversion')
-    #q:num of common-effect coeff; p: num of random-effect coeff; m: num of statistical units
-    #already expanded covariates above
-    matrixX = matrix(data=bigsol[[5]],nrow=ncol(covariates),ncol=length(lambda)) #implementative coeff (length: (q-p) + m*p)
+  
+  print('********Start of coefficient conversion')
+  matrixX = matrix(data=bigsol[[5]],nrow=ncol(covariates),ncol=length(lambda)) #implementative coeff (length: (q-p) + m*p)
+
+  if (p != 0) { #exists random-effect
 
     # convert into official coeff (length: q + m*p)
-    if (q !=p) { #random-effect is the subset of fixed-effect
-      matrixBetaPrime <- matrixX[1:(q-p),,drop=FALSE]
-      matrixBiPrime <- matrixX[-(1:(q-p)),,drop=FALSE] #split matrixX into 2 matrices
-    } else {
-      matrixBiPrime <- matrixX
+    if (p<q && p!=0) { #random-effect as subset
+      betaPrime <- matrixX[1:(q-p),,drop=FALSE]
+      b_iPrime <- matrixX[-(1:(q-p)),,drop=FALSE] #split matrixX into 2 matrices
+    } else if (p==q) { #random-effect as full set
+      b_iPrime <- matrixX
     }
-
     
     #convert fixed-effect
-    matrixBeta = matrix(0,nrow=q,ncol=length(lambda))
+    beta = matrix(0,nrow=q,ncol=length(lambda))
     indBeta = 1
     indBi = 1
     
     for (i in 1:q) {
       if (!is.element(i,random_effect)) { #beta as it is
-        matrixBeta[i,] = matrixBetaPrime[indBeta,,drop=FALSE] 
+        beta[i,] = betaPrime[indBeta,,drop=FALSE] 
         indBeta=indBeta+1
       } else { #convert beta prime to original prime
         temp = numeric(length(lambda))
         for (j in 1:m) {
-          temp =temp + matrixBiPrime[indBi+(j-1)*p,]
+          temp =temp + b_iPrime[indBi+(j-1)*p,]
         }
-        matrixBeta[i,]=temp/m
+        beta[i,]=temp/m
         indBi=indBi+1
       }
     }
   
     #convert random-effect
-    matrixBi = matrix(0,nrow=m*p,ncol=length(lambda))
+    b_i = matrix(0,nrow=m*p,ncol=length(lambda))
     indRanEff=1 #this index will be cycled according to random_effect elements
     
     for (i in 1:(m*p)) {
-      matrixBi[i,] = matrixBiPrime[i,]-matrixBeta[random_effect[ifelse(indRanEff!=0,indRanEff, p)],]
+      b_i[i,] = b_iPrime[i,]-beta[random_effect[ifelse(indRanEff!=0,indRanEff, p)],]
       indRanEff = (indRanEff+1)%%p
     }
 
-    betabi = rbind(matrixBeta, matrixBi)
+    #change the name of the rows
+    rname=c()
+    for (i in 1:m) {
+      temp=paste('b_', as.character(i),sep="")
+      for (j in 1:p) {
+        temp2=paste(temp, as.character(j),sep="")
+        rname=c(rname, temp2)
+      }
+    }
+
+    rownames(b_i) = rname
     print('********End of coefficient conversion')
     
+  } else { #if p==0, no random-effect
+    beta = matrixX
+    b_i = NULL
   }
-  else
-    betabi = NULL
+    
 
-   # Save information of Tree Mesh
-    tree_mesh = list(
-    treelev = bigsol[[6]][1],
-    header_orig= bigsol[[7]], 
-    header_scale = bigsol[[8]],
-    node_id = bigsol[[9]][,1],
-    node_left_child = bigsol[[9]][,2],
-    node_right_child = bigsol[[9]][,3],
-    node_box= bigsol[[10]])
+  # Save information of Tree Mesh
+  tree_mesh = list(
+  treelev = bigsol[[6]][1],
+  header_orig= bigsol[[7]], 
+  header_scale = bigsol[[8]],
+  node_id = bigsol[[9]][,1],
+  node_left_child = bigsol[[9]][,2],
+  node_right_child = bigsol[[9]][,3],
+  node_box= bigsol[[10]])
+
 
   # Reconstruct FEMbasis with tree mesh
   mesh.class= class(FEMbasis$mesh)
@@ -252,26 +266,26 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   } #if already exist the tree information, don't append
   class(FEMbasis$mesh) = mesh.class  
 
+
+  # Make Functional objects
+  fit.FEM  = FEM.mixed(f, num_units, FEMbasis)
+  PDEmisfit.FEM = FEM.mixed(g, num_units, FEMbasis)
+
+
   # Save information of Barycenter
   if (is.null(bary.locations)) {
       bary.locations = list(locations=locations, element_ids = bigsol[[11]], barycenters = bigsol[[12]])    
   }
   class(bary.locations) = "bary.locations"
 
-  # Make Functional objects object
-  fit.FEM  = FEM(f, FEMbasis)
-  PDEmisfit.FEM = FEM(g, FEMbasis)
 
   # Prepare return list
   reslist = NULL
-
-  if(GCV == TRUE)
-  {
+  if(GCV == TRUE) {
     stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
-    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM,
-            betabi = betabi, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, bary.locations = bary.locations)
-  }else{
-    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, betabi = betabi, bary.locations = bary.locations)
+    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta, b_i = b_i, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, bary.locations = bary.locations)
+  }else {
+    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta, b_i = b_i, bary.locations = bary.locations)
   }
 
   return(reslist)
