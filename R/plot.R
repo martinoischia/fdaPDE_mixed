@@ -1,6 +1,6 @@
 #' Plot a \code{FEM} object
 #'
-#' @param x A \code{FEM} object.
+#' @param FEMobject A \code{FEM} object.
 #' @param num_refinements A natural number specifying how many bisections should be applied to each triangular element for
 #' plotting purposes. This functionality is useful where a discretization with 2nd order Finite Element is applied.
 #' This parameter can be specified only when a FEM object defined over a 2D mesh is plotted.
@@ -11,7 +11,7 @@
 #' the value of the coefficients for the Finite Element basis expansion (\code{coeff} component of the \code{FEM} object).
 #' If the \code{mesh} is of class \code{mesh.3D}, the color of each triangle or tetrahedron represent the mean value of
 #' the coefficients for the Finite Element basis expansion (\code{coeff}).
-#' @usage \method{plot}{FEM}(x, num_refinements, ...)
+#' @usage \method{plot}{FEM}(FEMobject, num_refinements, ...)
 #' @export
 #' @seealso \code{\link{FEM}}, \code{\link{image.FEM}}
 #' @examples
@@ -32,25 +32,25 @@
 #' ## Plot the FEM function
 #' plot(FEMfunction)
 
-plot.FEM = function(x, num_refinements = NULL, ...)
+plot.FEM = function(FEMobject, num_refinements = NULL, ...)
 {
-if(class(x$FEMbasis$mesh)=="mesh.2D"){
-  if(x$FEMbasis$order == 1)
+if(class(FEMobject$FEMbasis$mesh)=="mesh.2D"){
+  if(FEMobject$FEMbasis$order == 1)
   {
-    R_plot.ORD1.FEM(x, ...)
+    R_plot.ORD1.FEM(FEMobject, ...)
   }else{
-    R_plot.ORDN.FEM(x, num_refinements, ...)
+    R_plot.ORDN.FEM(FEMobject, num_refinements, ...)
   }
-}else if(class(x$FEMbasis$mesh)=="mesh.2.5D"){
-	R_plot_manifold(x,...)
-}else if(class(x$FEMbasis$mesh)=="mesh.3D"){
-	R_plot_volume(x,...)
+}else if(class(FEMobject$FEMbasis$mesh)=="mesh.2.5D"){
+	R_plot_manifold(FEMobject,...)
+}else if(class(FEMobject$FEMbasis$mesh)=="mesh.3D"){
+	R_plot_volume(FEMobject,...)
 }
 }
 
 #' Plot a \code{FEM.time} object at a given time
 #'
-#' @param x A \code{FEM.time} object.
+#' @param FEMtimeobject A \code{FEM.time} object.
 #' @param t time at which do the plot, may be a vector
 #' @param lambdaS index of the space penalization parameter to use for the plot, useful when \code{FEM.time} returned by \code{smooth.FEM.time} using GCV
 #' @param lambdaT index of the time penalization parameter to use for the plot, useful when \code{FEM.time} returned by \code{smooth.FEM.time} using GCV
@@ -64,7 +64,7 @@ if(class(x$FEMbasis$mesh)=="mesh.2D"){
 #' the value of the coefficients for the Finite Element basis expansion (\code{coeff} component of the \code{FEM.time} object).
 #' If the \code{mesh} is of class \code{mesh.3D}, the color of each triangle or tetrahedron represent the mean value of
 #' the coefficients for the Finite Element basis expansion (\code{coeff}).
-#' @usage \method{plot}{FEM.time}(x,t,lambdaS,lambdaT, num_refinements, ...)
+#' @usage \method{plot}{FEM.time}(FEMtimeobject,t,lambdaS,lambdaT, num_refinements, ...)
 #' @export
 #' @seealso \code{\link{FEM.time}}, \code{\link{image.FEM.time}}
 #' @examples
@@ -87,23 +87,23 @@ if(class(x$FEMbasis$mesh)=="mesh.2D"){
 #' t = c(1.2,1.5,3.6,2.4,4.5)
 #' plot(FEM_time_function,t)
 
-plot.FEM.time = function(x,t,lambdaS=NULL,lambdaT=NULL,num_refinements=NULL,...)
+plot.FEM.time = function(FEMtimeobject,t,lambdaS=NULL,lambdaT=NULL,num_refinements=NULL,...)
 {
   t <- as.matrix(t)
-  if(class(x) != 'FEM.time')
-    stop("x is not of class 'FEM.time'")
+  if(class(FEMtimeobject) != 'FEM.time')
+    stop("FEMtimeobject is not of class 'FEM.time'")
   if(is.null(t))
     stop("time required; is NULL")
   if(ncol(t)>1)
     stop("t must be a column vector")
-  if(min(t)<x$mesh_time[1] || max(t)>x$mesh_time[length(x$mesh_time)])
+  if(min(t)<FEMtimeobject$mesh_time[1] || max(t)>FEMtimeobject$mesh_time[length(FEMtimeobject$mesh_time)])
     stop("time provided out of the 'time_mesh'")
   if(is.null(lambdaS) || is.null(lambdaT))
   {
-    if(exists("x$bestlambda"))
+    if(exists("FEMtimeobject$bestlambda"))
     {
-      lambdaS = x$bestlambda[1]
-      lambdaT = x$bestlambda[2]
+      lambdaS = FEMtimeobject$bestlambda[1]
+      lambdaT = FEMtimeobject$bestlambda[2]
     }
     else
     {
@@ -111,26 +111,26 @@ plot.FEM.time = function(x,t,lambdaS=NULL,lambdaT=NULL,num_refinements=NULL,...)
       lambdaT = 1
     }
   }
-  if(dim(x$coeff)[2]>1 && lambdaS==1)
+  if(dim(FEMtimeobject$coeff)[2]>1 && lambdaS==1)
     warning("the first value of lambdaS is being used")
-  if(dim(x$coeff)[3]>1 && lambdaT==1)
+  if(dim(FEMtimeobject$coeff)[3]>1 && lambdaT==1)
     warning("the first value of lambdaT is being used")
-  if(class(x$FEMbasis$mesh)=="mesh.2D")
-    N = nrow(x$FEMbasis$mesh$nodes)
+  if(class(FEMtimeobject$FEMbasis$mesh)=="mesh.2D")
+    N = nrow(FEMtimeobject$FEMbasis$mesh$nodes)
   else
-    N = x$FEMbasis$mesh$nnodes
+    N = FEMtimeobject$FEMbasis$mesh$nnodes
 
   t <- as.vector(t)
   storage.mode(t) <- "double"
   storage.mode(N) <- "integer"
-  storage.mode(x$mesh_time) <- "double"
-  storage.mode(x$coeff) <- "double"
-  storage.mode(x$FLAG_PARABOLIC) <- "integer"
+  storage.mode(FEMtimeobject$mesh_time) <- "double"
+  storage.mode(FEMtimeobject$coeff) <- "double"
+  storage.mode(FEMtimeobject$FLAG_PARABOLIC) <- "integer"
 
-  solution <- .Call("eval_FEM_time_nodes",N,x$mesh_time,t,x$coeff[,lambdaS,lambdaT],x$FLAG_PARABOLIC, PACKAGE = "fdaPDE")
+  solution <- .Call("eval_FEM_time_nodes",N,FEMtimeobject$mesh_time,t,FEMtimeobject$coeff[,lambdaS,lambdaT],FEMtimeobject$FLAG_PARABOLIC, PACKAGE = "fdaPDE")
   for(i in 1:length(t))
   {
-    plot = FEM(solution[(1+(i-1)*N):(N+(i-1)*N)],x$FEMbasis)
+    plot = FEM(solution[(1+(i-1)*N):(N+(i-1)*N)],FEMtimeobject$FEMbasis)
     plot.FEM(plot,num_refinements,...)
   }
 }
@@ -138,13 +138,13 @@ plot.FEM.time = function(x,t,lambdaS=NULL,lambdaT=NULL,num_refinements=NULL,...)
 
 #' Plot a mesh.2D object
 #'
-#' @param x A \code{mesh.2D} object defining the triangular mesh, as generated by \code{create.mesh.2D}
+#' @param mesh A \code{mesh.2D} object defining the triangular mesh, as generated by \code{create.mesh.2D}
 #' or \code{refine.mesh.2D}.
 #' @param ... Arguments representing graphical options to be passed to \link[graphics]{par}.
 #' @description Plot a mesh.2D object, generated by \code{create.mesh.2D} or \code{refine.mesh.2D}.
 #' @name plot.mesh.2D
 
-#' @usage \method{plot}{mesh.2D}(x, ...)
+#' @usage \method{plot}{mesh.2D}(mesh, ...)
 #' @export
 #' @examples
 #' library(fdaPDE)
@@ -156,23 +156,23 @@ plot.FEM.time = function(x,t,lambdaS=NULL,lambdaT=NULL,num_refinements=NULL,...)
 #'
 #' ## Plot the mesh
 #' plot(mesh)
-plot.mesh.2D<-function(x, ...)
+plot.mesh.2D<-function(mesh, ...)
 {
-  plot(x$nodes, xlab="", ylab="", xaxt="n", yaxt="n", bty="n", ...)
-  segments(x$nodes[x$edges[,1],1], x$nodes[x$edges[,1],2],
-           x$nodes[x$edges[,2],1], x$nodes[x$edges[,2],2], ...)
-  segments(x$nodes[x$segments[,1],1], x$nodes[x$segments[,1],2],
-           x$nodes[x$segments[,2],1], x$nodes[x$segments[,2],2], col="red", ...)
+  plot(mesh$nodes, xlab="", ylab="", xaxt="n", yaxt="n", bty="n", ...)
+  segments(mesh$nodes[mesh$edges[,1],1], mesh$nodes[mesh$edges[,1],2],
+           mesh$nodes[mesh$edges[,2],1], mesh$nodes[mesh$edges[,2],2], ...)
+  segments(mesh$nodes[mesh$segments[,1],1], mesh$nodes[mesh$segments[,1],2],
+           mesh$nodes[mesh$segments[,2],1], mesh$nodes[mesh$segments[,2],2], col="red", ...)
 }
 #' Plot a mesh.2.5D object
 #'
-#' @param x A \code{mesh.2.5D} object generated by \code{create.mesh.2.5D}.
+#' @param mesh A \code{mesh.2.5D} object generated by \code{create.mesh.2.5D}.
 #' @param ... Arguments representing graphical options to be passed to \link[graphics]{par}.
 #' @description Plot the triangulation of a \code{mesh.2.5D} object, generated by \code{create.mesh.2.5D}
 #' @export
 #' @name plot.mesh.2.5D
 
-#' @usage \method{plot}{mesh.2.5D}(x, ...)
+#' @usage \method{plot}{mesh.2.5D}(mesh, ...)
 #' @examples
 #' library(fdaPDE)
 #'
@@ -184,13 +184,13 @@ plot.mesh.2D<-function(x, ...)
 #' plot(mesh)
 
 
-plot.mesh.2.5D<-function(x,...){
+plot.mesh.2.5D<-function(mesh,...){
 
   # if(!require(rgl)){
   #   stop("The plot mesh.2.5D_function(...) requires the R package rgl, please install it and try again!")
   # }
   #
-  mesh<-x
+  mesh<-mesh
   triangles = c(t(mesh$triangles))
   ntriangles=mesh$ntriangles
 
@@ -225,13 +225,13 @@ plot.mesh.2.5D<-function(x,...){
 
 #' Plot a mesh.3D object
 #'
-#' @param x A \code{mesh.3D} object generated by \code{create.mesh.3D}.
+#' @param mesh A \code{mesh.3D} object generated by \code{create.mesh.3D}.
 #' @param ... Arguments representing graphical options to be passed to \link[graphics]{par}.
 #' @description Plot a \code{mesh.3D} object, generated by \code{create.mesh.3D}.
 #' @export
 #' @name plot.mesh.3D
 
-#' @usage \method{plot}{mesh.3D}(x, ...)
+#' @usage \method{plot}{mesh.3D}(mesh, ...)
 #' @examples
 #' library(fdaPDE)
 #'
@@ -241,7 +241,7 @@ plot.mesh.2.5D<-function(x,...){
 #' plot.mesh.3D(sphere3D)
 
 
-plot.mesh.3D<-function(x,...){
+plot.mesh.3D<-function(mesh,...){
 
   # if(!require(rgl)){
   #   stop("The plot mesh.2.5D_function(...) requires the R package rgl, please install it and try again!")
@@ -249,7 +249,7 @@ plot.mesh.3D<-function(x,...){
   #if(!require(geometry)){
    # stop("The plot mesh.3D_function(...) requires the R package geometry, please install it and try again!")
   # }
-  mesh<-x
+  mesh<-mesh
   tetrahedrons = mesh$tetrahedrons
   ntetrahedrons=mesh$ntetrahedrons
 
@@ -495,13 +495,13 @@ plot.mesh.3D<-function(x,...){
 
  #' Image Plot of a 2D FEM object
  #'
- #' @param x A 2D-mesh \code{FEM} object.
+ #' @param mesh A 2D-mesh \code{FEM} object.
  #' @param num_refinements A natural number specifying how many bisections should by applied to each triangular element for
  #' plotting purposes. This functionality is useful where a discretization with 2nd order Finite Element is applied.
  #' @param ... Arguments representing  graphical options to be passed to \link[rgl]{plot3d}.
  #' @description Image plot of a \code{FEM} object, generated by the function \code{FEM} or returned by
  #' \code{smooth.FEM} and \code{FPCA.FEM}. Only FEM objects defined over a 2D mesh can be plotted with this method.
- #' @usage \method{image}{FEM}(x, num_refinements, ...)
+ #' @usage \method{image}{FEM}(mesh, num_refinements, ...)
  #' @seealso \code{\link{FEM}} \code{\link{plot.FEM}}
  #' @export
  #' @examples
@@ -521,16 +521,16 @@ plot.mesh.3D<-function(x,...){
  #'
  #' ## Plot the FEM function
  #' image(FEMfunction)
- image.FEM = function(x, num_refinements = NULL, ...)
+ image.FEM = function(mesh, num_refinements = NULL, ...)
  {
-   if(class(x$FEMbasis$mesh)!='mesh.2D')
+   if(class(mesh$FEMbasis$mesh)!='mesh.2D')
      stop('This function is implemented only for 2D mesh FEM objects')
 
-   if(x$FEMbasis$order == 1)
+   if(mesh$FEMbasis$order == 1)
    {
-     R_image.ORD1.FEM(x, ...)
+     R_image.ORD1.FEM(mesh, ...)
    }else{
-     R_image.ORDN.FEM(x, num_refinements, ...)
+     R_image.ORDN.FEM(mesh, num_refinements, ...)
    }
  }
 
