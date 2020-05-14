@@ -58,9 +58,10 @@
 #' @description This function implements a nonparametric density estimation method with differential regularization 
 #' (given by the square root of the L2 norm of the laplacian of the density function), when points are located over a 
 #' planar mesh. The computation relies only on the C++ implementation of the algorithm.
-#' @usage DE.FEM(data, FEMbasis, lambda, fvec=NULL, heatStep=0.1, heatIter=500, stepProposals=NULL,
-#' tol1=1e-4, tol2=0, print=FALSE, nfolds=NULL, nsimulations=500, step_method, direction_method,
-#'  preprocess_method="NoCrossValidation", search = 2)
+#' @usage DE.FEM(data, FEMbasis, lambda, fvec=NULL, heatStep=0.1, heatIter=500, 
+#'               stepProposals=NULL,tol1=1e-4, tol2=0, print=FALSE, nfolds=NULL, 
+#'               nsimulations=500, step_method, direction_method,
+#'               preprocess_method="NoCrossValidation", search = 2)
 #' @export
 #' @examples
 #' library(fdaPDE)
@@ -87,9 +88,10 @@
 #' ## Density Estimation
 #' lambda = 0.1
 #' sol <- DE.FEM(data = data, FEMbasis = FEMbasis, lambda = lambda, fvec=NULL, heatStep=0.1,
-#'                   heatIter=500, stepProposals=NULL, tol1=1e-4, tol2=0, print=FALSE, nfolds=NULL, nsimulations=500, 
-#'                   step_method = "Fixed_Step", direction_method = "BFGS",
-#'                   preprocess_method="NoCrossValidation", search = 2)
+#'                   heatIter=500, stepProposals=NULL, tol1=1e-4, tol2=0, print=FALSE, 
+#'                   nfolds=NULL, nsimulations=500,step_method = "Fixed_Step", 
+#'                   direction_method = "BFGS",preprocess_method="NoCrossValidation", 
+#'                   search = 2)
 #' 
 #' ## Visualization 
 #' n = 100
@@ -101,7 +103,8 @@
 #' evaluation <- exp(evaluation)
 #' eval <- matrix(evaluation, n, n)
 #' 
-#' image2D(x=X, y=Y, z=eval, col=heat.colors(100), xlab="x",ylab="y", contour=list(drawlabels = FALSE), main = "Estimated density")
+#' image2D(x = X, y = Y, z = eval, col = heat.colors(100), xlab = "x", ylab = "y", 
+#'         contour = list(drawlabels = FALSE), main = "Estimated density")
 
 
 DE.FEM <- function(data, FEMbasis, lambda, fvec=NULL, heatStep=0.1, heatIter=500, stepProposals=NULL,

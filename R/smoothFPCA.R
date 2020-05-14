@@ -44,8 +44,9 @@
 #' }
 #' @description This function implements a smooth functional principal component analysis over a planar mesh, 
 #' a smooth manifold or a volume. 
-#' @usage FPCA.FEM(locations = NULL, datamatrix, FEMbasis, lambda, nPC = 1, validation = NULL, NFolds = 5, 
-#'                  GCVmethod = "Stochastic", nrealizations = 100, search = "tree", bary.locations = NULL)
+#' @usage FPCA.FEM(locations = NULL, datamatrix, FEMbasis, lambda, nPC = 1, validation = NULL, 
+#'                 NFolds = 5,GCVmethod = "Stochastic", nrealizations = 100, search = "tree", 
+#'                 bary.locations = NULL)
 #' @references Lila, E., Aston, J.A.D.,  Sangalli, L.M., 2016a. Smooth Principal Component Analysis over two-dimensional 
 #' manifolds with an application to neuroimaging. Ann. Appl. Stat., 10(4), pp. 1854-1879. 
 #' @export
@@ -54,6 +55,9 @@
 #' 
 #' ## Load the hub data
 #' data(hub2.5D)
+#' hub2.5D.nodes = hub2.5D$hub2.5D.nodes
+#' hub2.5D.triangles = hub2.5D$hub2.5D.triangles
+#' 
 #' mesh = create.mesh.2.5D(nodes = hub2.5D.nodes, triangles = hub2.5D.triangles)
 #' ## Create the Finite Element basis 
 #' FEMbasis = create.FEM.basis(mesh)
@@ -66,7 +70,9 @@
 #'   
 #'   func_evaluation = numeric(mesh$nnodes)
 #'   for (i in 0:(mesh$nnodes-1)){
-#'     func_evaluation[i+1] = a1* sin(2*pi*mesh$nodes[i+1,1]) +  a2* sin(2*pi*mesh$nodes[i+1,2]) +  a3*sin(2*pi*mesh$nodes[i+1,3]) +1
+#'     func_evaluation[i+1] = a1* sin(2*pi*mesh$nodes[i+1,1]) +  
+#'                            a2* sin(2*pi*mesh$nodes[i+1,2]) +  
+#'                            a3*sin(2*pi*mesh$nodes[i+1,3]) + 1
 #'   }
 #'   data = func_evaluation + rnorm(mesh$nnodes, mean = 0, sd = 0.5)
 #'   datamatrix = rbind(datamatrix, data)

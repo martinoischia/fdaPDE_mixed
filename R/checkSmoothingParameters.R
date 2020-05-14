@@ -236,8 +236,8 @@ checkSmoothingParametersSize<-function(locations = NULL, observations, FEMbasis,
       warning("GCV=FALSE. DOF_matrix is passed but GCV is not computed")
     if(ncol(DOF_matrix)!=1)
       stop("'DOF_matrix' must be a column vector")
-    if(nrow(DOF_matrix)!=length(lambdaS))
-      stop("The number of rows of DOF_matrix is different from the number of lambdaS")
+    if(nrow(DOF_matrix)!=length(lambda))
+      stop("The number of rows of DOF_matrix is different from the number of lambda")
   }
 
 }
