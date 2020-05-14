@@ -231,15 +231,16 @@ FEM<-function(coeff,FEMbasis)
 #' ## Compute the coeff vector evaluating the desired function at the mesh nodes
 #' ## In this case we consider the fs.test() function introduced by Wood et al. 2008
 #' coeff = rep(fs.test(mesh$nodes[,1], mesh$nodes[,2]),5)
-#' time_mesh = seq(0,1,5)
+#' time_mesh = seq(0,1,length.out = 5)
 #' ## Create the FEM object
-#' FEMfunction = FEM(coeff,time_mesh, FEMbasis,FLAG_PARABOLIC=T)
+#' FEMfunction = FEM.time(coeff, time_mesh, FEMbasis, FLAG_PARABOLIC = TRUE)
 #' ## Plot it at desired time
 #' plot(FEMfunction,0.7)
 #' @export
 
 FEM.time<-function(coeff,time_mesh,FEMbasis,FLAG_PARABOLIC=FALSE)
 {
+  coeff = as.matrix(coeff)
   M = ifelse(FLAG_PARABOLIC,length(time_mesh),length(time_mesh)+2)
   if (is.null(coeff))
     stop("coeff required;  is NULL.")
