@@ -83,7 +83,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 		psi_.setFromTriplets(tripletAll.begin(),tripletAll.end());
 		psi_.makeCompressed();
 	}
-	else if (regressionData_.isLocationsByBarycenter() & regressionData_.getNumberOfRegions() == 0) //pointwise data
+	else if (regressionData_.isLocationsByBarycenter() && (regressionData_.getNumberOfRegions() == 0)) //pointwise data
 	{
 		constexpr UInt Nodes = mydim==2 ? 3*ORDER : 6*ORDER-2;
 		Element<Nodes, mydim, ndim> tri_activated;
@@ -111,7 +111,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 		} //end of for loop
 		psi_.makeCompressed();
 	}
-	else if (!regressionData_.isLocationsByBarycenter() & regressionData_.getNumberOfRegions() == 0)
+	else if ((!regressionData_.isLocationsByBarycenter()) && (regressionData_.getNumberOfRegions() == 0))
 	{
 		constexpr UInt Nodes = mydim==2 ? 3*ORDER : 6*ORDER-2;
 		Element<Nodes, mydim, ndim> tri_activated;
