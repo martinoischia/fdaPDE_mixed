@@ -38,6 +38,8 @@ library(fdaPDE)
 
 ## Upload the hub2.5D the data
 data(hub2.5D)
+hub2.5D.nodes = hub2.5D$hub2.5D.nodes
+hub2.5D.triangles = hub2.5D$hub2.5D.triangles
 
 ## Create mesh from nodes and connectivity matrix:
 mesh = create.mesh.2.5D(nodes = hub2.5D.nodes, triangles = hub2.5D.triangles)

@@ -4,7 +4,8 @@
 \alias{eval.FEM}
 \title{Evaluate a FEM object at a set of point locations}
 \usage{
-eval.FEM(FEM, locations = NULL, incidence_matrix = NULL, search = "tree", bary.locations = NULL)
+eval.FEM(FEM, locations = NULL, incidence_matrix = NULL, search = "tree", 
+                bary.locations = NULL)
 }
 \arguments{
 \item{FEM}{A \code{FEM} object to be evaluated.}
@@ -37,6 +38,9 @@ The locations and the incidence matrix cannot be both NULL or both provided.
 library(fdaPDE)
 ## Upload the horseshoe2D data
 data(horseshoe2D)
+boundary_nodes = horseshoe2D$boundary_nodes
+boundary_segments = horseshoe2D$boundary_segments
+locations = horseshoe2D$locations
 
 ## Create the 2D mesh
 mesh = create.mesh.2D(nodes = rbind(boundary_nodes, locations), segments = boundary_segments)
@@ -44,7 +48,7 @@ mesh = create.mesh.2D(nodes = rbind(boundary_nodes, locations), segments = bound
 FEMbasis = create.FEM.basis(mesh)
 ## Compute the coeff vector evaluating the desired function at the mesh nodes
 ## In this case we consider the fs.test() function introduced by Wood et al. 2008
-coeff = fs.test(mesh$nodes[,1], mesh$nodes[,2], exclude = FALSE)
+coeff = fs.test(mesh$nodes[,1], mesh$nodes[,2])
 ## Create the FEM object
 FEMfunction = FEM(coeff, FEMbasis)
 

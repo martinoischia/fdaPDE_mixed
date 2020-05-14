@@ -48,6 +48,10 @@ library(fdaPDE)
 
 ## Upload the quasicircle2D data
 data(quasicircle2D)
+boundary_nodes = quasicircle2D$boundary_nodes
+boundary_segments = quasicircle2D$boundary_segments
+locations = quasicircle2D$locations
+data = quasicircle2D$data
 
 ## Create mesh from boundary:
 mesh = create.mesh.2D(nodes = boundary_nodes, segments = boundary_segments)

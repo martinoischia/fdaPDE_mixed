@@ -4,10 +4,10 @@
 \alias{plot.FEM}
 \title{Plot a \code{FEM} object}
 \usage{
-\method{plot}{FEM}(FEMobject, num_refinements, ...)
+\method{plot}{FEM}(x, num_refinements, ...)
 }
 \arguments{
-\item{FEMobject}{A \code{FEM} object.}
+\item{x}{A \code{FEM} object.}
 
 \item{num_refinements}{A natural number specifying how many bisections should be applied to each triangular element for
 plotting purposes. This functionality is useful where a discretization with 2nd order Finite Element is applied.
@@ -27,6 +27,9 @@ the coefficients for the Finite Element basis expansion (\code{coeff}).
 library(fdaPDE)
 ## Upload the horseshoe2D data
 data(horseshoe2D)
+boundary_nodes = horseshoe2D$boundary_nodes
+boundary_segments = horseshoe2D$boundary_segments
+locations = horseshoe2D$locations
 
 ## Create the 2D mesh
 mesh = create.mesh.2D(nodes = rbind(boundary_nodes, locations), segments = boundary_segments)
@@ -34,7 +37,7 @@ mesh = create.mesh.2D(nodes = rbind(boundary_nodes, locations), segments = bound
 FEMbasis = create.FEM.basis(mesh)
 ## Compute the coeff vector evaluating the desired function at the mesh nodes
 ## In this case we consider the fs.test() function introduced by Wood et al. 2008
-coeff = fs.test(mesh$nodes[,1], mesh$nodes[,2], exclude = FALSE)
+coeff = fs.test(mesh$nodes[,1], mesh$nodes[,2])
 ## Create the FEM object
 FEMfunction = FEM(coeff, FEMbasis)
 
