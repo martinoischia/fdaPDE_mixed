@@ -93,6 +93,10 @@ triangulate_native <- function(P, PB, PA, S, SB,H, TR, flags) {
 #' 
 #' ## Upload the quasicirle2D data
 #' data(quasicircle2D)
+#' boundary_nodes = quasicircle2D$boundary_nodes
+#' boundary_segments = quasicircle2D$boundary_segments
+#' locations = quasicircle2D$locations
+#' data = quasicircle2D$data
 #' 
 #' ## Create mesh from boundary
 #' ## if the domain is convex it is sufficient to call:
@@ -275,6 +279,10 @@ create.mesh.2D <- function(nodes, nodesattributes = NA, segments = NA, holes = N
 #' 
 #' ## Upload the quasicircle2D data
 #' data(quasicircle2D)
+#' boundary_nodes = quasicircle2D$boundary_nodes
+#' boundary_segments = quasicircle2D$boundary_segments
+#' locations = quasicircle2D$locations
+#' data = quasicircle2D$data
 #' 
 #' ## Create mesh from boundary:
 #' mesh = create.mesh.2D(nodes = boundary_nodes, segments = boundary_segments)
@@ -389,6 +397,8 @@ refine.mesh.2D<-function(mesh, minimum_angle = NA, maximum_area = NA, delaunay =
 #'
 #' ## Upload the hub2.5D the data
 #' data(hub2.5D)
+#' hub2.5D.nodes = hub2.5D$hub2.5D.nodes
+#' hub2.5D.triangles = hub2.5D$hub2.5D.triangles
 #'
 #' ## Create mesh from nodes and connectivity matrix:
 #' mesh = create.mesh.2.5D(nodes = hub2.5D.nodes, triangles = hub2.5D.triangles)
@@ -430,19 +440,23 @@ create.mesh.2.5D<- function(nodes, triangles, order = 1)
 #' library(fdaPDE)
 #'
 #' ## Upload the hub2.5D the data
-#' data(hub25Ddata)
+#' data(hub2.5D)
+#' hub2.5D.nodes = hub2.5D$hub2.5D.nodes
+#' hub2.5D.triangles = hub2.5D$hub2.5D.triangles
 #'
 #' ## Create mesh
-#' mesh <- create.mesh.2.5D(nodes = nodes,triangles = triangles)
+#' mesh = create.mesh.2.5D(nodes = hub2.5D.nodes, triangles = hub2.5D.triangles)
 #' 
-#' # Create 3D uniform grid points to be projected
-#' x <- seq(-3,3,by=0.6)
-#' y <- seq(-3,3,by=0.6)
-#'  z <- seq(-3,3,by=0.6)
-#' grid = expand.grid(x=x, y=y, z=z)
-#' loc = points.projection.2.5D(mesh, grid)
+#' ## Create 3D points to be projected
+#' x <- cos(seq(0,2*pi, length.out = 9))
+#' y <- sin(seq(0,2*pi, length.out = 9))
+#' z <- rep(0.5, 9)
+#' locations = cbind(x,y,z)
+#' 
+#' ## Project the points on the mesh
+#' loc = projection.points.2.5D(mesh, locations)
 
-points.projection.2.5D<-function(mesh, locations) {
+projection.points.2.5D<-function(mesh, locations) {
   if(class(mesh) !="mesh.2.5D")
   stop("Data projection is only available for 2.5D mesh ")
 
@@ -566,8 +580,8 @@ second.order.mesh.2.5D<-function(nodes, triangles){
 #' ##Load the matrix nodes and tetrahedrons
 #' data(sphere3Ddata)
 #'
-#' nodes=sphere3Ddata$nodes
-#' tetrahedrons=sphere3Ddata$tetrahedrons
+#' nodes = sphere3Ddata$nodes
+#' tetrahedrons = sphere3Ddata$tetrahedrons
 #'
 #' ##Create the triangulated mesh from the connectivity matrix and nodes locations
 #' mesh=create.mesh.3D(nodes,tetrahedrons)
