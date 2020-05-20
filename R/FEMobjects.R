@@ -217,7 +217,8 @@ FEM.mixed<-function(coeff,num_units,FEMbasis)
     stop("FEMbasis required;  is NULL.")
   if(class(FEMbasis) != "FEMbasis")
     stop("FEMbasis not of class 'FEMbasis'")
-  if(dim(coeff)[1] != (FEMbasis$nbasis*num_units))
+  coeff = as.matrix(coeff)
+  if(nrow(coeff) != (FEMbasis$nbasis*num_units))
     stop("Number of row of 'coeff' different from number of basis*number of statistical units")
 
   fclass = NULL
