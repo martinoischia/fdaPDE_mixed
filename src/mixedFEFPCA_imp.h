@@ -55,7 +55,7 @@ void MixedFEFPCABase<Integrator, ORDER, mydim, ndim>::computeBasisEvaluations()
 		Psi_.setFromTriplets(tripletAll.begin(),tripletAll.end());
 		Psi_.makeCompressed();
 	}
-	else if (fpcaData_.isLocationsByBarycenter() & fpcaData_.getNumberOfRegions()==0)
+	else if (fpcaData_.isLocationsByBarycenter() && (fpcaData_.getNumberOfRegions()==0))
 	{
 		//Constexpr is used for selecting the right number of nodes to pass as a template parameter to the Element object.In case of planar domain(i.e. mydim==2), we have that the number of nodes is 3*ORDER. In case of volumetric domain (i.e. mydim==3), we have that the number of nodes is 4 nodes if ORDER==1 and 10 nodes if ORDER==2, so the expression is 6*ORDER-2. ORDER==2 if mydim==3 is not yet implemented.
 		constexpr UInt Nodes = mydim==2? 3*ORDER : 6*ORDER-2;
@@ -88,7 +88,7 @@ void MixedFEFPCABase<Integrator, ORDER, mydim, ndim>::computeBasisEvaluations()
 		Psi_.prune(tolerance);
 		Psi_.makeCompressed();
 	}
-	else if (!fpcaData_.isLocationsByBarycenter() & fpcaData_.getNumberOfRegions()==0)
+	else if ((!fpcaData_.isLocationsByBarycenter()) && fpcaData_.getNumberOfRegions()==0)
 	{
 		//Constexpr is used for selecting the right number of nodes to pass as a template parameter to the Element object.In case of planar domain(i.e. mydim==2), we have that the number of nodes is 3*ORDER. In case of volumetric domain (i.e. mydim==3), we have that the number of nodes is 4 nodes if ORDER==1 and 10 nodes if ORDER==2, so the expression is 6*ORDER-2. ORDER==2 if mydim==3 is not yet implemented.
 		constexpr UInt Nodes = mydim==2? 3*ORDER : 6*ORDER-2;

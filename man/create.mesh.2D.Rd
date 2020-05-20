@@ -72,6 +72,10 @@ library(fdaPDE)
 
 ## Upload the quasicirle2D data
 data(quasicircle2D)
+boundary_nodes = quasicircle2D$boundary_nodes
+boundary_segments = quasicircle2D$boundary_segments
+locations = quasicircle2D$locations
+data = quasicircle2D$data
 
 ## Create mesh from boundary
 ## if the domain is convex it is sufficient to call:

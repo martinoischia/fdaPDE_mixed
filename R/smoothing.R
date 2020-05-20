@@ -56,6 +56,8 @@
 #' of the GCV index. If set to "Stochastic" the GCV is approximated by a stochastic algorithm.
 #' @param nrealizations This parameter is considered only when \code{GCV=TRUE} and \code{GCVmethod = "Stochastic"}.
 #' It is a positive integer that represents the number of uniform random variables used in stochastic GCV computation.
+#' @param DOF_matrix Matrix of degrees of freedom. This parameter can be used if the DOF_matrix corresponding to \code{lambdaS} and \code{lambdaT} is available from precedent computation. This allows to save time
+#' since the computation of the dof is the most expensive part of GCV.
 #' @param search a flag to decide the search algorithm type (tree or naive or walking search algorithm).
 #' @param bary.locations A list with three vectors:
 #'  \code{locations}, location points which are same as the given locations options. (checks whether both locations are the same);
@@ -81,7 +83,8 @@
 #'  can be imposed at the domain boundaries.
 #' @usage smooth.FEM(locations = NULL, observations, FEMbasis, lambda,
 #'                   covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL,
-#'                   BC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL, search = "tree", bary.locations = NULL)
+#'                   BC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, 
+#'                   DOF_matrix=NULL, search = "tree", bary.locations = NULL)
 #' @export
 
 #' @references
@@ -96,19 +99,25 @@
 #'
 #' #### No prior information about anysotropy/non-stationarity (laplacian smoothing) ####
 #' data(horseshoe2D)
+#' boundary_nodes = horseshoe2D$boundary_nodes
+#' boundary_segments = horseshoe2D$boundary_segments
+#' locations = horseshoe2D$locations
+#' 
+#' mesh = create.mesh.2D(nodes = rbind(boundary_nodes, locations), segments = boundary_segments)
 #' FEMbasis = create.FEM.basis(mesh)
 #' lambda = 10^-1
 #' # no covariate
-#' data = fs.test(mesh$nodes[,1], mesh$nodes[,2], exclude = FALSE) + rnorm(nrow(mesh$nodes), sd = 0.5)
+#' data = fs.test(mesh$nodes[,1], mesh$nodes[,2]) + rnorm(nrow(mesh$nodes), sd = 0.5)
 #'
-#' solution = smooth.FEM.basis(observations = data, FEMbasis = FEMbasis, lambda = lambda)
+#' solution = smooth.FEM(observations = data, FEMbasis = FEMbasis, lambda = lambda)
 #' plot(solution$fit.FEM)
 #'
 #' # with covariates
 #' covariate = covs.test(mesh$nodes[,1], mesh$nodes[,2])
-#' data = fs.test(mesh$nodes[,1], mesh$nodes[,2], exclude = FALSE) + 2*covariate + rnorm(nrow(mesh$nodes), sd = 0.5)
+#' data = fs.test(mesh$nodes[,1], mesh$nodes[,2]) + 2*covariate + rnorm(nrow(mesh$nodes), sd = 0.5)
 #'
-#' solution = smooth.FEM.basis(observations = data, covariates = covariate, FEMbasis = FEMbasis, lambda = lambda)
+#' solution = smooth.FEM(observations = data, covariates = covariate, 
+#'                       FEMbasis = FEMbasis, lambda = lambda)
 #' # beta estimate:
 #' solution$beta
 #' # non-parametric estimate:
@@ -116,7 +125,7 @@
 #'
 #' # Choose lambda with GCV:
 #' lambda = 10^(-2:2)
-#' solution = smooth.FEM.basis(observations = data,
+#' solution = smooth.FEM(observations = data,
 #'                             covariates = covariate,
 #'                             FEMbasis = FEMbasis,
 #'                             lambda = lambda,
@@ -127,7 +136,12 @@
 #' #### Smoothing with prior information about anysotropy/non-stationarity and boundary conditions ####
 #' # See Azzimonti et al. for reference to the current exemple
 #' data(quasicircle2D)
-#' mesh = create.MESH.2D(nodes = rbind(boundary_nodes, locations), segments = boundary_segments)
+#' boundary_nodes = quasicircle2D$boundary_nodes
+#' boundary_segments = quasicircle2D$boundary_segments
+#' locations = quasicircle2D$locations
+#' data = quasicircle2D$data
+#' 
+#' mesh = create.mesh.2D(nodes = rbind(boundary_nodes, locations), segments = boundary_segments)
 #' FEMbasis = create.FEM.basis(mesh)
 #' lambda = 10^-2
 #'
@@ -140,10 +154,10 @@
 #' {
 #'   output = array(0, c(2, 2, nrow(points)))
 #'   for (i in 1:nrow(points))
-#'     output[,,i] = 10*rbind(c(points[i,2]^2 + K1*points[i,1]^2 + K2*(R^2 - points[i,1]^2 - points[i,2]^2),
-#'                              (K1-1)*points[i,1]*points[i,2]),
-#'                            c((K1-1)*points[i,1]*points[i,2],
-#'                              points[i,1]^2 + K1*points[i,2]^2 + K2*(R^2 - points[i,1]^2 - points[i,2]^2)))
+#'     output[,,i]=10*rbind(c(points[i,2]^2+K1*points[i,1]^2+K2*(R^2-points[i,1]^2-points[i,2]^2),
+#'                            (K1-1)*points[i,1]*points[i,2]),
+#'                          c((K1-1)*points[i,1]*points[i,2],
+#'                            points[i,1]^2+K1*points[i,2]^2+K2*(R^2-points[i,1]^2-points[i,2]^2)))
 #'   output
 #' }
 #'
@@ -175,7 +189,7 @@
 #' dataNA = rep(NA, FEMbasis$nbasis)
 #' dataNA[mesh$nodesmarkers == 0] = data
 #'
-#' solution = smooth.FEM.basis(observations = dataNA,
+#' solution = smooth.FEM(observations = dataNA,
 #'                             FEMbasis = FEMbasis,
 #'                             lambda = lambda,
 #'                             PDE_parameters = PDE_parameters,
@@ -186,6 +200,9 @@
 #' #### Smoothing with areal data ####
 #' # See Azzimonti et al. for reference to the current exemple
 #' data(quasicircle2Dareal)
+#' incidence_matrix = quasicircle2Dareal$incidence_matrix
+#' data = quasicircle2Dareal$data
+#' mesh = quasicircle2Dareal$mesh
 #'
 #' FEMbasis = create.FEM.basis(mesh)
 #' lambda = 10^-4
@@ -199,10 +216,10 @@
 #' {
 #'   output = array(0, c(2, 2, nrow(points)))
 #'   for (i in 1:nrow(points))
-#'     output[,,i] = 10*rbind(c(points[i,2]^2 + K1*points[i,1]^2 + K2*(R^2 - points[i,1]^2 - points[i,2]^2),
-#'                              (K1-1)*points[i,1]*points[i,2]),
-#'                            c((K1-1)*points[i,1]*points[i,2],
-#'                              points[i,1]^2 + K1*points[i,2]^2 + K2*(R^2 - points[i,1]^2 - points[i,2]^2)))
+#'     output[,,i]=10*rbind(c(points[i,2]^2+K1*points[i,1]^2+K2*(R^2-points[i,1]^2-points[i,2]^2),
+#'                            (K1-1)*points[i,1]*points[i,2]),
+#'                          c((K1-1)*points[i,1]*points[i,2],
+#'                            points[i,1]^2+K1*points[i,2]^2+K2*(R^2-points[i,1]^2-points[i,2]^2)))
 #'   output
 #' }
 #'
@@ -230,7 +247,7 @@
 #' BC$BC_indices = which(mesh$nodesmarkers == 1) # b.c. on the complete boundary
 #' BC$BC_values = rep(0,length(BC$BC_indices)) # homogeneus b.c.
 #'
-#' solution = smooth.FEM.basis(observations = data,
+#' solution = smooth.FEM(observations = data,
 #'                             incidence_matrix = incidence_matrix,
 #'                             FEMbasis = FEMbasis,
 #'                             lambda = lambda,

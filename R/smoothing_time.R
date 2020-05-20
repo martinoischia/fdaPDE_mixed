@@ -1,14 +1,15 @@
 #' @useDynLib fdaPDE
 #' @import Matrix plot3D rgl plot3Drgl geometry
 #' @importFrom grDevices heat.colors palette
-#' @importFrom graphics plot segments
+#' @importFrom graphics plot segments points lines
 NULL
 
 #' Space-time regression with differential regularization
 
 #' @param locations A matrix where each row specifies the spatial coordinates \code{x} and \code{y} (and \code{z} if ndim=3) of the corresponding observations in the vector \code{observations}.
-#' This parameter can be \code{NULL}. In this case,if also the incidence matrix is \code{NULL} the spatial coordinates are assumed to coincide with the nodes of the \code{mesh}.
-#' @param time_locations A vector containing the times of the corresponding observations in the vector \code{observations}.
+#' This parameter can be \code{NULL}. In this case, if also the incidence matrix is \code{NULL} the spatial coordinates are assumed to coincide with the nodes of the \code{mesh}.
+#' @param time_locations A vector containing the times of the corresponding observations in the vector \code{observations}. 
+#' This parameter can be \code{NULL}. In this case the temporal locations are assumed to coincide with the nodes of the \code{time_mesh}.
 #'
 #' @param observations A matrix of #locations x #time_locations with the observed data values over the spatio-temporal domain.
 #' The spatial locations of the observations can be specified with the \code{locations} argument.
@@ -67,41 +68,40 @@ NULL
 #' \item{\code{ICestimated}}{If FLAG_PARABOLIC is \code{TRUE} and IC is \code{NULL}, a list containing a \code{FEM} object with the initial conditions, the value of the smoothing parameter lambda returning the lowest GCV and, in presence of covariates, the estimated beta coefficients}
 #' \item{\code{bary.locations}}{A barycenter information of the given locations if the locations are not mesh nodes.}
 #' @description Space-time regression  with differential regularization. Space-varying covariates can be included in the model. The technique accurately handle data distributed over irregularly shaped domains. Moreover, various conditions can be imposed at the domain boundaries.
-#' @usage smooth.FEM.time(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL,
-#'  incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL, search = "tree", bary.locations = NULL)
+#' @usage smooth.FEM.time(locations = NULL, time_locations = NULL, observations, FEMbasis, 
+#'                        time_mesh = NULL, lambdaS, lambdaT = 1, covariates = NULL, 
+#'                        PDE_parameters = NULL, incidence_matrix = NULL, BC = NULL, 
+#'                        FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, 
+#'                        GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL, 
+#'                        search = "tree", bary.locations = NULL)
 #' @export
 
 #' @references Sangalli, L.M., Ramsay, J.O. & Ramsay, T.O., 2013. Spatial spline regression models. Journal of the Royal Statistical Society. Series B: Statistical Methodology, 75(4), pp. 681-703.
 #' @examples
 #' library(fdaPDE)
-#' ## Load the Meuse data and a domain boundary for these data
-#' data(MeuseData)
-#' data(MeuseBorder)
-#' ## Create a triangular mesh for these data with the provided boundary and plot it
-#' order=1
-#' mesh <- create.mesh.2D(nodes = MeuseData[,c(2,3)], segments = MeuseBorder, order = order)
-#' plot(mesh)
-#' ## Create the Finite Element basis
+#' 
+#' data(horseshoe2D)
+#' boundary_nodes = horseshoe2D$boundary_nodes
+#' boundary_segments = horseshoe2D$boundary_segments
+#' locations = horseshoe2D$locations
+#' time_locations = seq(0,1,length.out = 5)
+#' 
+#' mesh = create.mesh.2D(nodes = rbind(boundary_nodes, locations), segments = boundary_segments)
+#' 
+#' space_time_locations = cbind(rep(time_locations,each=nrow(mesh$nodes)),
+#'                              rep(mesh$nodes[,1],5),rep(mesh$nodes[,2],5))
+#' 
 #' FEMbasis = create.FEM.basis(mesh)
-#' ## Estimate zync field without using covariates, setting the smoothing parameter to 10^3.5
-#' data = log(MeuseData[,"zinc"])
-#' lambda = 10^3.5
-#' ZincMeuse = smooth.FEM.time(observations = data,
-#'                              FEMbasis = FEMbasis, lambda = lambda)
-#' ## Plot the estimated spatial field
-#' plot(ZincMeuse$fit.FEM)
-#' # Now repeat the analysis using as covariates the square root of the log-distance
-#' # from river \code{sqrt(dist.log(m))} and the altitude \code{elev}
-#' desmat = matrix(1,nrow=nrow(MeuseData),ncol=2)
-#' desmat[,1] = sqrt(MeuseData[,"dist.log(m)"])
-#' desmat[,2] = MeuseData[,"elev"]
-#' ZincMeuseCovar = smooth.FEM.time(observations = data, covariates = desmat,
-#'                                    FEMbasis = FEMbasis, lambda = lambda)
-#' # Plot of the non parametric part (f) of the regression model y_i = beta_1 x_i1 + beta_2 x_i2 + f
-#' plot(ZincMeuseCovar$fit.FEM)
-#' # Print covariates' regression coefficients
-#' print(ZincMeuseCovar$beta)
-
+#' lambdaS = 10^-1
+#' lambdaT = 10^-1
+#' data = fs.test(space_time_locations[,2], 
+#'                space_time_locations[,3])*cos(pi*space_time_locations[,1]) +
+#'        rnorm(nrow(space_time_locations), sd = 0.5)
+#' data = matrix(data, nrow = nrow(mesh$nodes), ncol = length(time_locations), byrow = TRUE)
+#' 
+#' solution = smooth.FEM.time(observations = data, time_locations = time_locations,
+#'                            FEMbasis = FEMbasis, lambdaS = lambdaS, lambdaT = lambdaT)
+#' plot(solution$fit.FEM)
 
 smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL, search = "tree", bary.locations = NULL)
 {
@@ -119,19 +119,19 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
   }
   ##################### Checking parameters, sizes and conversion ################################
 
-  if(GCVmethod=="Stochastic")
+  if(GCVmethod=="Stochastic"){
     GCVMETHOD=2
-  else if(GCVmethod=="Exact")
+  }else if(GCVmethod=="Exact"){
     GCVMETHOD=1
-  else{
+  }else{
     stop("GCVmethod must be either Stochastic or Exact")
   }
 
-  if(search=="naive")
+  if(search=="naive"){
     search=1
-  else if(search=="tree")
+  }else if(search=="tree"){
     search=2
-  else{
+  }else{
     stop("search must be either tree or naive.")
   }
 

@@ -2,7 +2,7 @@ checkSmoothingParameters_time<-function(locations = NULL, time_locations=NULL, o
 {
   #################### Parameter Check #########################
 
-  if (is.null(FEMbasis))
+  if(is.null(FEMbasis))
     stop("FEMbasis required;  is NULL.")
   if(class(FEMbasis)!= "FEMbasis")
     stop("'FEMbasis' is not class 'FEMbasis'")
@@ -136,22 +136,16 @@ checkSmoothingParametersSize_time<-function(locations = NULL, time_locations=NUL
     stop("'observations' must contain at least one element")
   if(nrow(observations) < 1)
     stop("'observations' must contain at least one element")
-  # if(is.null(locations))
-  # {
-  #   if(class(FEMbasis$mesh) == "mesh.2D")
-  #   {
-  #     if(nrow(observations) > nrow(FEMbasis$mesh$nodes))
-  #       stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
-  #   }else if(class(FEMbasis$mesh) == "mesh.2.5D" || class(FEMbasis$mesh) == "mesh.3D")
-  #   {
-  #     if(nrow(observations) > FEMbasis$mesh$nnodes)
-  #       stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
-  #   }
-  # }
 
-  if(!is.null(time_locations))
+  if(!is.null(time_locations)){
     if(ncol(time_locations) != 1)
       stop("'time_locations' must be a column vector")
+    if (ncol(observations) != nrow(time_locations))
+      stop("'observations' must be a #locations x #time_locations matrix")
+  }else{
+    if (ncol(observations) != nrow(time_mesh))
+      stop("'observations' must be a #locations x #time_locations matrix")
+  }
 
   if(!is.null(time_mesh))
     if(ncol(time_mesh) != 1)

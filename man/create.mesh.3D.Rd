@@ -33,8 +33,8 @@ library(fdaPDE)
 ##Load the matrix nodes and tetrahedrons
 data(sphere3Ddata)
 
-nodes=sphere3Ddata$nodes
-tetrahedrons=sphere3Ddata$tetrahedrons
+nodes = sphere3Ddata$nodes
+tetrahedrons = sphere3Ddata$tetrahedrons
 
 ##Create the triangulated mesh from the connectivity matrix and nodes locations
 mesh=create.mesh.3D(nodes,tetrahedrons)

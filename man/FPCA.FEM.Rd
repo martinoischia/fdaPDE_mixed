@@ -4,8 +4,9 @@
 \alias{FPCA.FEM}
 \title{Smooth Functional Principal Component Analysis}
 \usage{
-FPCA.FEM(locations = NULL, datamatrix, FEMbasis, lambda, nPC = 1, validation = NULL, NFolds = 5, 
-                 GCVmethod = "Stochastic", nrealizations = 100, search = "tree", bary.locations = NULL)
+FPCA.FEM(locations = NULL, datamatrix, FEMbasis, lambda, nPC = 1, validation = NULL, 
+                NFolds = 5,GCVmethod = "Stochastic", nrealizations = 100, search = "tree", 
+                bary.locations = NULL)
 }
 \arguments{
 \item{locations}{A #observations-by-2 matrix in the 2D case and #observations-by-3 matrix in the 2.5D and 3D case, where 
@@ -72,6 +73,9 @@ library(fdaPDE)
 
 ## Load the hub data
 data(hub2.5D)
+hub2.5D.nodes = hub2.5D$hub2.5D.nodes
+hub2.5D.triangles = hub2.5D$hub2.5D.triangles
+
 mesh = create.mesh.2.5D(nodes = hub2.5D.nodes, triangles = hub2.5D.triangles)
 ## Create the Finite Element basis 
 FEMbasis = create.FEM.basis(mesh)
@@ -84,7 +88,9 @@ for(ii in 1:50){
   
   func_evaluation = numeric(mesh$nnodes)
   for (i in 0:(mesh$nnodes-1)){
-    func_evaluation[i+1] = a1* sin(2*pi*mesh$nodes[i+1,1]) +  a2* sin(2*pi*mesh$nodes[i+1,2]) +  a3*sin(2*pi*mesh$nodes[i+1,3]) +1
+    func_evaluation[i+1] = a1* sin(2*pi*mesh$nodes[i+1,1]) +  
+                           a2* sin(2*pi*mesh$nodes[i+1,2]) +  
+                           a3*sin(2*pi*mesh$nodes[i+1,3]) + 1
   }
   data = func_evaluation + rnorm(mesh$nnodes, mean = 0, sd = 0.5)
   datamatrix = rbind(datamatrix, data)
