@@ -147,7 +147,6 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh)
 template<typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
 SEXP regression_skeleton_mixed(InputHandler &regressionData, SEXP Rmesh)
 {
-	std::cout<<"************ Start regression_skeleton_mixed " << std::endl;
 	MeshHandler<ORDER, mydim, ndim> mesh(Rmesh);
 	MixedFERegression<InputHandler, Integrator,ORDER, IntegratorGaussP3, 0, 0, mydim, ndim> regression(mesh,regressionData);
 
@@ -993,8 +992,7 @@ SEXP regression_Laplace_mixed(SEXP Rlocations, SEXP Robservations, SEXP RnumUnit
 					SEXP Rlambda, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues,
 					SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations)
 {
-	std::cout<<"************ Start regression_Laplace_mixed " << std::endl;
-    //Set input data
+	//Set input data
 	RegressionData regressionData(Rlocations, Robservations, RnumUnits, Rorder, Rlambda, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, GCV, RGCVmethod, Rnrealizations, DOF, RDOF_matrix, Rsearch, RbaryLocations);
 
 	UInt mydim=INTEGER(Rmydim)[0];

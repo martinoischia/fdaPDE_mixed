@@ -124,7 +124,6 @@ RegressionData::RegressionData(SEXP Rlocations, SEXP Robservations, SEXP Rorder,
 	flag_SpaceTime_=false;
 	flag_Mixed_=false;
 
-	std::cout << "**********RegressionData constructor: space case" << std::endl;
 	setLocations(Rlocations);
 	setBaryLocations(RbaryLocations);
 	setIncidenceMatrix(RincidenceMatrix);
@@ -134,7 +133,6 @@ RegressionData::RegressionData(SEXP Rlocations, SEXP Robservations, SEXP Rorder,
 	setDOF_matrix(RDOF_matrix);
 
 	GCVmethod_ = INTEGER(RGCVmethod)[0];
-
 	order_ =  INTEGER(Rorder)[0];
 	search_ =  INTEGER(Rsearch)[0];
 	GCV_ = INTEGER(GCV)[0];
@@ -157,7 +155,6 @@ RegressionData::RegressionData(SEXP Rlocations, SEXP Robservations, SEXP RnumUni
 							SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP GCV, SEXP RGCVmethod,
 							SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations)
 {
-	std::cout << "**********RegressionData constructor: space-mixed case" << std::endl;
 	flag_SpaceTime_=false;
 	flag_Mixed_=true;
 

@@ -92,7 +92,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     }
   }
 
-  print('********Start of covariate conversion')
+  # Start of covariate conversion
   # find number of statistical units, m
   num_units = dim(observations)[2]
   
@@ -130,8 +130,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   # else if (p==0) { #no random-effect
   #   covariates = as.matrix(covariates)
   # }
-  ### End of conversion
-  print('********End of covariate conversion')
+  ### End of covariate conversion
 
   ################## End checking parameters, sizes and conversion #############################
 
@@ -188,7 +187,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   bestlambda = bigsol[[4]]+1
 
   
-  print('********Start of coefficient conversion')
+  # Start of coefficient conversion
   matrixX = matrix(data=bigsol[[5]],nrow=ncol(covariates),ncol=length(lambda)) #implementative coeff (length: (q-p) + m*p)
 
   if (p != 0) { #exists random-effect
@@ -240,7 +239,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     }
 
     rownames(b_i) = rname
-    print('********End of coefficient conversion')
+    # End of coefficient conversion
     
   } else { #if p==0, no random-effect
     beta = matrixX

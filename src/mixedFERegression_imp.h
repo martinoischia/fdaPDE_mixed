@@ -725,7 +725,6 @@ template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename I
 template<typename A>
 void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::apply(EOExpr<A> oper, const ForcingTerm & u)
 {
-	std::cout<<"************ Start apply " << std::endl;
 	UInt nnodes = N_*M_;
 	FiniteElement<IntegratorSpace, ORDER, mydim, ndim> fe;
 
