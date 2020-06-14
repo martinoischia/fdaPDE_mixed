@@ -20,6 +20,7 @@ extern SEXP get_integration_points(SEXP, SEXP, SEXP, SEXP);
 extern SEXP points_projection(SEXP, SEXP);
 extern SEXP R_triangulate_native(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP regression_Laplace(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP regression_Laplace_mixed(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP regression_Laplace_time(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP regression_PDE(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP regression_PDE_space_varying(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -41,6 +42,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"points_projection",                 (DL_FUNC) &points_projection,                  2},
     {"R_triangulate_native",              (DL_FUNC) &R_triangulate_native,               8},
     {"regression_Laplace",                (DL_FUNC) &regression_Laplace,                18},
+    {"regression_Laplace_mixed",          (DL_FUNC) &regression_Laplace_mixed,          19},
     {"regression_Laplace_time",           (DL_FUNC) &regression_Laplace_time,           24},
     {"regression_PDE",                    (DL_FUNC) &regression_PDE,                    21},
     {"regression_PDE_space_varying",      (DL_FUNC) &regression_PDE_space_varying,      22},

@@ -93,7 +93,9 @@ class MixedFERegressionBase
 	void setA();
 	//! A member function returning the system right hand data
 	void getRightHandData(VectorXr& rightHandData);
-	//! A method which builds all the matrices needed for assembling matrixNoCov_
+	//! A method which builds all the matrices needed for assembling matrixNoCov_ in space-mixed case
+	void buildSpaceMixedMatrices();
+	//! A method which builds all the matrices needed for assembling matrixNoCov_ in space-time case
 	void buildSpaceTimeMatrices();
 	//! A method computing the dofs
 	void computeDegreesOfFreedom(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
@@ -113,7 +115,7 @@ class MixedFERegressionBase
 	public:
 	//!A Constructor.
 	MixedFERegressionBase(const MeshHandler<ORDER,mydim,ndim>& mesh, const InputHandler& regressionData):
-			mesh_(mesh), N_(mesh.num_nodes()), M_(1), regressionData_(regressionData), _dof(regressionData.getDOF_matrix()){};
+			mesh_(mesh), N_(mesh.num_nodes()), M_(regressionData.isMixed()? regressionData.getNumberofUnits() : 1), regressionData_(regressionData), _dof(regressionData.getDOF_matrix()){};
 	MixedFERegressionBase(const MeshHandler<ORDER,mydim,ndim>& mesh, const std::vector<Real>& mesh_time, const InputHandler& regressionData):
   		mesh_(mesh), mesh_time_(mesh_time), N_(mesh.num_nodes()), M_(regressionData.getFlagParabolic()? mesh_time.size()-1 : mesh_time.size()+SPLINE_DEGREE-1), regressionData_(regressionData), _dof(regressionData.getDOF_matrix()){};
 
@@ -142,6 +144,12 @@ class MixedFERegressionBase
 	inline UInt getBestLambdaS(){return bestLambdaS_;}
 	//! A method returning the index of the best lambdaT according to GCV
 	inline UInt getBestLambdaT(){return bestLambdaT_;}
+
+
+	// for inference of parameters
+	inline SpMat const & getPsi() const{return psi_;};
+	inline SpMat const & getR0() const{return R0_;};
+	inline SpMat const & getR1() const{return R1_;};
 };
 
 template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
