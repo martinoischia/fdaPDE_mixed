@@ -170,9 +170,9 @@ SEXP regression_skeleton_mixed(InputHandler &regressionData, SEXP Rmesh)
 	const VectorXi & elementIds = regression.getElementIds();
 
 	// for inference of parameters
-	const SpMat & psi = regression.getPsi();
-	const SpMat & R0 = regression.getR0();
-	const SpMat & R1 = regression.getR1();
+	// const SpMat & psi = regression.getPsi();
+	// const SpMat & R0 = regression.getR0();
+	// const SpMat & R1 = regression.getR1();
 
 	//Copy result in R memory
 	SEXP result = NILSXP;
@@ -266,29 +266,29 @@ SEXP regression_skeleton_mixed(InputHandler &regressionData, SEXP Rmesh)
 	}
 
 	// for inference of parameters
-	SET_VECTOR_ELT(result, 12, Rf_allocMatrix(REALSXP, psi.rows(), psi.cols()));
-	Real *rans12 = REAL(VECTOR_ELT(result, 12));
-	for(UInt j = 0; j < psi.cols(); j++)
-	{
-		for(UInt i = 0; i < psi.rows(); i++)
-			rans12[i + psi.rows()*j] = psi.coeff(i,j);
-	}
+	// SET_VECTOR_ELT(result, 12, Rf_allocMatrix(REALSXP, psi.rows(), psi.cols()));
+	// Real *rans12 = REAL(VECTOR_ELT(result, 12));
+	// for(UInt j = 0; j < psi.cols(); j++)
+	// {
+	// 	for(UInt i = 0; i < psi.rows(); i++)
+	// 		rans12[i + psi.rows()*j] = psi.coeff(i,j);
+	// }
 
-	SET_VECTOR_ELT(result, 13, Rf_allocMatrix(REALSXP, R0.rows(), R0.cols()));
-	Real *rans13 = REAL(VECTOR_ELT(result, 13));
-	for(UInt j = 0; j < R0.cols(); j++)
-	{
-		for(UInt i = 0; i < R0.rows(); i++)
-			rans13[i + R0.rows()*j] = R0.coeff(i,j);
-	}
+	// SET_VECTOR_ELT(result, 13, Rf_allocMatrix(REALSXP, R0.rows(), R0.cols()));
+	// Real *rans13 = REAL(VECTOR_ELT(result, 13));
+	// for(UInt j = 0; j < R0.cols(); j++)
+	// {
+	// 	for(UInt i = 0; i < R0.rows(); i++)
+	// 		rans13[i + R0.rows()*j] = R0.coeff(i,j);
+	// }
 
-	SET_VECTOR_ELT(result, 14, Rf_allocMatrix(REALSXP, R1.rows(), R1.cols()));
-	Real *rans14 = REAL(VECTOR_ELT(result, 14));
-	for(UInt j = 0; j < R1.cols(); j++)
-	{
-		for(UInt i = 0; i < R1.rows(); i++)
-			rans14[i + R1.rows()*j] = R1.coeff(i,j);
-	}
+	// SET_VECTOR_ELT(result, 14, Rf_allocMatrix(REALSXP, R1.rows(), R1.cols()));
+	// Real *rans14 = REAL(VECTOR_ELT(result, 14));
+	// for(UInt j = 0; j < R1.cols(); j++)
+	// {
+	// 	for(UInt i = 0; i < R1.rows(); i++)
+	// 		rans14[i + R1.rows()*j] = R1.coeff(i,j);
+	// }
 
 	UNPROTECT(1);
 	return(result);
