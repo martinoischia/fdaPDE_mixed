@@ -51,6 +51,38 @@ if(class(x$FEMbasis$mesh)=="mesh.2D"){
 }
 }
 
+plot.FEM.mixed = function(x, lambda=NULL, num_refinements=NULL,...)
+{
+if(class(x) != 'FEM.mixed')
+    stop("x is not of class 'FEM.mixed'")
+  if(is.null(lambda))
+  {
+    if(exists("x$bestlambda"))
+    {
+      lambda = x$bestlambda
+    }
+    else
+    {
+      lambda = 1
+    }
+  }
+  if(dim(x$coeff)[2]>1 && lambda==1)
+    warning("the first value of lambda is being used")
+  if(class(x$FEMbasis$mesh)=="mesh.2D")
+    N = nrow(x$FEMbasis$mesh$nodes)
+  else
+    N = x$FEMbasis$mesh$nnodes
+
+  
+  m = x$num_units
+
+  for(i in 1:m)
+  {
+    plot = FEM(x$coeff[(1+(i-1)*N):(N+(i-1)*N),lambda], x$FEMbasis)
+    plot.FEM(plot,num_refinements,...)
+  }
+}
+
 #' Plot a \code{FEM.time} object at a given time
 #'
 #' @param x A \code{FEM.time} object.
@@ -695,6 +727,25 @@ plot.mesh.3D<-function(x,...){
      R_image.ORD1.FEM(x, ...)
    }else{
      R_image.ORDN.FEM(x, num_refinements, ...)
+   }
+ }
+
+ image.FEM.mixed = function(x,lambda=1, num_refinements=NULL,...)
+ {
+   if(class(x) != 'FEM.mixed')
+     stop("x is not of class 'FEM.mixed'")
+   if(dim(x$coeff)[2]>1 && lambda==1)
+     warning("the first value of lambda is being used")
+   if(class(x$FEMbasis$mesh)=="mesh.2D")
+     N = nrow(x$FEMbasis$mesh$nodes)
+   else
+      stop("x$FEMbasis$mesh is not of class 'mesh.2D'")
+
+   m = x$num_units
+   for(i in 1:m)
+   {
+     plot = FEM(solution[(1+(i-1)*N):(N+(i-1)*N)],x$FEMbasis)
+     image.FEM(plot,num_refinements,...)
    }
  }
 
