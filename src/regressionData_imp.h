@@ -161,7 +161,7 @@ RegressionData::RegressionData(SEXP Rlocations, SEXP Robservations, SEXP RnumUni
 	setLocations(Rlocations);
 	setBaryLocations(RbaryLocations);
 	setIncidenceMatrix(RincidenceMatrix);
-	setObservations(Robservations);
+	setObservationsMixed(Robservations);
 	setCovariates(Rcovariates);
 	setNrealizations(Rnrealizations);
 	setDOF_matrix(RDOF_matrix);
@@ -361,6 +361,32 @@ void RegressionData::setObservations(SEXP Robservations)
 		}
 	}
 
+	//std::cout<<"Observations #"<<observations_.size()<<std::endl<<observations_<<std::endl;
+	//for(auto i=0;i<observations_indices_.size();++i)	std::cout<<observations_indices_[i]<<std::endl;
+}
+
+void RegressionData::setObservationsMixed(SEXP Robservations)
+{
+	UInt n_obs_ = Rf_length(Robservations);
+	observations_.resize(n_obs_);
+	observations_indices_.reserve(n_obs_);
+
+	UInt count = 0;
+	locations_by_nodes_ = (locations_.size() == 0 && nRegions_ == 0) ? true : false;
+
+	for(auto i=0;i<n_obs_;++i)
+	{
+		if(!ISNA(REAL(Robservations)[i]))
+		{
+			observations_(i) = REAL(Robservations)[i];
+			observations_indices_.push_back(i);
+		}
+		else
+		{
+			observations_(i) = 0.0;
+			observations_na_.push_back(i);
+		}
+	}
 	//std::cout<<"Observations #"<<observations_.size()<<std::endl<<observations_<<std::endl;
 	//for(auto i=0;i<observations_indices_.size();++i)	std::cout<<observations_indices_[i]<<std::endl;
 }

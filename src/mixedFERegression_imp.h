@@ -341,15 +341,16 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 
 	if (regressionData_.getCovariates().rows() == 0) //no covariate
 	{
-		if (regressionData_.isLocationsByNodes() && !regressionData_.isSpaceTime())
+		if (regressionData_.isLocationsByNodes() && !regressionData_.isSpaceTime() && !regressionData_.isMixed())
 		{
-				for (auto i=0; i<nlocations;++i)
-				{
-					auto index_i = regressionData_.getObservationsIndices()[i];
-					rightHandData(index_i) = regressionData_.getObservations()[i];
-				}
+			for (auto i=0; i<nlocations;++i)
+			{
+				auto index_i = regressionData_.getObservationsIndices()[i];
+				rightHandData(index_i) = regressionData_.getObservations()[i];
+			}
 		}
-		else if (regressionData_.isLocationsByNodes() && regressionData_.isSpaceTime() && regressionData_.getFlagParabolic())
+		else if ((regressionData_.isLocationsByNodes() && regressionData_.isSpaceTime() && regressionData_.getFlagParabolic()) ||
+					regressionData_.isLocationsByNodes() && regressionData_.isMixed())
 		{
 			for (auto i=0; i<regressionData_.getObservationsIndices().size();++i)
 			{
@@ -588,40 +589,6 @@ void MixedFERegressionBase<InputHandler, IntegratorSpace, ORDER, IntegratorTime,
 {
 	SpMat IM(M_,M_);
 	IM.setIdentity();
-	// SpMat phi;
-
-	// if(regressionData_.getFlagParabolic()) // Parabolic case
-	// {
-	// 	MixedFDRegression <InputHandler> FiniteDifference(mesh_time_,regressionData_);
-	// 	FiniteDifference.setDerOperator();
-	// 	SpMat L = FiniteDifference.getDerOpL(); // Matrix of finite differences
-	// 	IM.setIdentity();
-	// 	LR0k_ = kroneckerProduct(L,R0_);
-	// 	phi = IM;
-	// 	//! right hand side correction for the initial condition:
-	// 	rhs_ic_correction_ = (1/(mesh_time_[1]-mesh_time_[0]))*(R0_*regressionData_.getInitialValues());
-	// }
-	// else	// Separable case
-	// {
-	// 	MixedSplineRegression <InputHandler, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE> Spline(mesh_time_,regressionData_);
-	// 	SpMat IN(N_,N_);
-	// 	Spline.setPhi();
-	// 	Spline.setTimeMass();
-	// 	Spline.smoothSecondDerivative();
-	// 	if(regressionData_.getFlagMass()) // Mass penalization
-	// 	{
-	// 		IM = Spline.getTimeMass();
-	// 		IN = R0_;
-	// 	}
-	// 	else	// Identity penalization
-	// 	{
-	// 		IM.setIdentity();
-	// 		IN.setIdentity();
-	// 	}
-	// 	phi = Spline.getPhi();
-	// 	SpMat Pt = Spline.getPt();
-	// 	Ptk_ = kroneckerProduct(Pt,IN);
-	// }
 
 	// Make the Kronecker product to tensorize the system
 	SpMat psi_temp =  psi_;

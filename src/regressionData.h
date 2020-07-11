@@ -71,6 +71,7 @@ class  RegressionData{
 		void setLocations(SEXP Rlocations);
 		void setTimeLocations(SEXP Rtime_locations);
 		void setObservations(SEXP Robservations);
+		void setObservationsMixed(SEXP Robservations);
 		void setObservationsTime(SEXP Robservations);
 		void setCovariates(SEXP Rcovariates);
 		void setNrealizations(SEXP Rnrealizations);
