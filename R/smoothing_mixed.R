@@ -267,8 +267,8 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
 
 
   # Make Functional objects
-  fit.FEM  = FEM.mixed(f, num_units, FEMbasis)
-  PDEmisfit.FEM = FEM.mixed(g, num_units, FEMbasis)
+  fit.FEM.mixed  = FEM.mixed(f, num_units, FEMbasis)
+  PDEmisfit.FEM.mixed = FEM.mixed(g, num_units, FEMbasis)
 
 
   # Save information of Barycenter
@@ -286,9 +286,10 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   reslist = NULL
   if(GCV == TRUE) {
     stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
-    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta, b_i = b_i, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, bary.locations = bary.locations)
+    reslist=list(fit.FEM.mixed = fit.FEM.mixed, PDEmisfit.FEM.mixed = PDEmisfit.FEM.mixed, 
+      beta = beta, b_i = b_i, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, bary.locations = bary.locations)
   }else {
-    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta, b_i = b_i, bary.locations = bary.locations)
+    reslist=list(fit.FEM.mixed = fit.FEM.mixed, PDEmisfit.FEM.mixed = PDEmisfit.FEM.mixed, beta = beta, b_i = b_i, bary.locations = bary.locations)
   }
 
   return(reslist)
