@@ -19,9 +19,7 @@ checkSmoothingParameters_mixed<-function(locations = NULL, observations, FEMbasi
   if(!is.null(locations))
   {
     if(any(is.na(locations)))
-      stop("Missing values not admitted in 'locations'.")
-    if(any(is.na(observations)))
-      stop("Missing values not admitted in 'observations' when 'locations' are specified.")
+      stop("Missing values not admitted in 'locations'.") 
   }
 
   if (is.null(observations))
