@@ -44,6 +44,7 @@ CPP_smooth.FEM.mixed<-function(locations, observations, num_units, FEMbasis, lam
   ## Set proper type for correct C++ reading
   locations <- as.matrix(locations)
   storage.mode(locations) <- "double"
+  storage.mode(observations) <- "double"
   storage.mode(FEMbasis$mesh$nodes) <- "double"
   storage.mode(FEMbasis$mesh$triangles) <- "integer"
   storage.mode(FEMbasis$mesh$edges) <- "integer"
