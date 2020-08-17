@@ -278,18 +278,18 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   class(bary.locations) = "bary.locations"
 
   # for inference of parameters
-  # psi = bigsol[[13]]
-  # R0 = bigsol[[14]]
-  # R1 = bigsol[[15]]
+  psi = bigsol[[13]]
+  R0 = bigsol[[14]]
+  R1 = bigsol[[15]]
 
   # Prepare return list
   reslist = NULL
   if(GCV == TRUE) {
     stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
     reslist=list(fit.FEM.mixed = fit.FEM.mixed, PDEmisfit.FEM.mixed = PDEmisfit.FEM.mixed, 
-      beta = beta, b_i = b_i, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, bary.locations = bary.locations)
+      beta = beta, b_i = b_i, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, psi=psi, R0=R0, R1=R1, bary.locations = bary.locations)
   }else {
-    reslist=list(fit.FEM.mixed = fit.FEM.mixed, PDEmisfit.FEM.mixed = PDEmisfit.FEM.mixed, beta = beta, b_i = b_i, bary.locations = bary.locations)
+    reslist=list(fit.FEM.mixed = fit.FEM.mixed, PDEmisfit.FEM.mixed = PDEmisfit.FEM.mixed, beta = beta, b_i = b_i, psi=psi, R0=R0, R1=R1, bary.locations = bary.locations)
   }
 
   return(reslist)
