@@ -59,11 +59,10 @@ template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename I
 void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::setPsi()
 {
 	UInt nnodes = mesh_.num_nodes();
-	// UInt nlocations = regressionData_.isSpaceTime() ? regressionData_.getNumberofSpaceObservations() : regressionData_.getNumberofObservations();
 	UInt nlocations;
-	if (regressionData_.isSpaceTime() && !regressionData_.isMixed()) {
+	if (regressionData_.isSpaceTime() && !regressionData_.isMixed()) { //space-time case
 		nlocations = regressionData_.getNumberofSpaceObservations();
-	} else if (regressionData_.isMixed() && !regressionData_.isSpaceTime()) {
+	} else if (regressionData_.isMixed() && !regressionData_.isSpaceTime()) { //space-mixed case
 		nlocations = regressionData_.getNumberofMixedObservations();
 	} else {
 		nlocations = regressionData_.getNumberofObservations();
@@ -81,7 +80,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 				tripletAll.push_back(coeff(i,k[i],1.0));
 			}
 		}
-		else //spacetime and spacemixed case (assumes the same spatial locations)
+		else //space-time and space-mixed case (assumes the same spatial locations)
 		{
 			tripletAll.reserve(nlocations);
 			for (int i = 0; i< nlocations; ++i){
@@ -305,13 +304,12 @@ template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename I
 void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::setA()
 {
 	UInt nRegions = regressionData_.getNumberOfRegions();
-	// UInt m = regressionData_.isSpaceTime() ? regressionData_.getNumberofTimeObservations():1;
 	UInt m;
-	if (regressionData_.isSpaceTime() && !regressionData_.isMixed()) {
+	if (regressionData_.isSpaceTime() && !regressionData_.isMixed()) { //space-time case
 		m = regressionData_.getNumberofTimeObservations();
-	} else if (regressionData_.isMixed() && !regressionData_.isSpaceTime()) {
+	} else if (regressionData_.isMixed() && !regressionData_.isSpaceTime()) { //space-mixed case
 		m = regressionData_.getNumberofUnits();
-	} else {
+	} else { //space case
 		m = 1;
 	}
 
@@ -341,7 +339,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 
 	if (regressionData_.getCovariates().rows() == 0) //no covariate
 	{
-		if (regressionData_.isLocationsByNodes() && !regressionData_.isSpaceTime() && !regressionData_.isMixed())
+		if (regressionData_.isLocationsByNodes() && !regressionData_.isSpaceTime() && !regressionData_.isMixed()) //space case
 		{
 			for (auto i=0; i<nlocations;++i)
 			{
@@ -350,7 +348,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 			}
 		}
 		else if ((regressionData_.isLocationsByNodes() && regressionData_.isSpaceTime() && regressionData_.getFlagParabolic()) ||
-					regressionData_.isLocationsByNodes() && regressionData_.isMixed())
+					regressionData_.isLocationsByNodes() && regressionData_.isMixed()) //space-time (parabolic) or space-mixed case
 		{
 			for (auto i=0; i<regressionData_.getObservationsIndices().size();++i)
 			{
@@ -402,7 +400,7 @@ void MixedFERegressionBase<InputHandler, IntegratorSpace, ORDER, IntegratorTime,
 	else
 		dataHat = z - LeftMultiplybyQ(z) + LeftMultiplybyQ(psi_*_solution(output_indexS,output_indexT).topRows(psi_.cols()));
 	UInt n = dataHat.rows();
-	if(regressionData_.isSpaceTime())
+	if(regressionData_.isSpaceTime() || regressionData_.isMixed()) //space-time or space-mixed case (taking into account NA)
 		{
 			const std::vector<UInt>& observations_na= regressionData_.getObservationsNA();
 			for(UInt id:observations_na)
@@ -711,10 +709,10 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 
 	}
 
-	if (regressionData_.isSpaceTime())
+	if (regressionData_.isSpaceTime()) //space-time case
 	{
 		buildSpaceTimeMatrices();
-	} else if (regressionData_.isMixed())
+	} else if (regressionData_.isMixed()) //space-mixed case
 	{
 		buildSpaceMixedMatrices();
 	}
