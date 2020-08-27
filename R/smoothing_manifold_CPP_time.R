@@ -1,5 +1,5 @@
-CPP_smooth.manifold.FEM.time<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT,
-                                    covariates=NULL, incidence_matrix=NULL, ndim, mydim, BC=NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, GCVMETHOD=2, nrealizations=100, DOF=TRUE, DOF_matrix=NULL, search, bary.locations)
+CPP_smooth.manifold.FEM.time<-function(locations, bary.locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT,
+                                    covariates=NULL, incidence_matrix=NULL, ndim, mydim, BC=NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, GCVMETHOD=2, nrealizations=100, DOF=TRUE, DOF_matrix=NULL, search, GCV.inflation.factor = 1, areal.data.avg = TRUE)
 {
 
   # C++ function for manifold works with vectors not with matrices
@@ -7,7 +7,7 @@ CPP_smooth.manifold.FEM.time<-function(locations, time_locations, observations, 
   FEMbasis$mesh$triangles=c(t(FEMbasis$mesh$triangles))
   FEMbasis$mesh$nodes=c(t(FEMbasis$mesh$nodes))
 
-  # Indexes in C++ starts from 0, in R from 1, opportune transformation
+  # Indexes in C++ starts from 0, in R from 1, opporGCV.inflation.factor transformation
 
   FEMbasis$mesh$triangles=FEMbasis$mesh$triangles-1
 
@@ -93,6 +93,10 @@ CPP_smooth.manifold.FEM.time<-function(locations, time_locations, observations, 
   storage.mode(GCVMETHOD) <- "integer"
   storage.mode(search) <- "integer"
 
+  storage.mode(GCV.inflation.factor) <- "double"
+  areal.data.avg <- as.integer(areal.data.avg)
+  storage.mode(areal.data.avg) <-"integer"
+
 
   ## Call C++ function
   ICsol=NA
@@ -114,10 +118,10 @@ CPP_smooth.manifold.FEM.time<-function(locations, time_locations, observations, 
     lambdaSIC <- as.matrix(lambdaSIC)
     storage.mode(lambdaSIC) <- "double"
     ## call the smoothing function with initial observations to estimates the IC
-    ICsol <- .Call("regression_Laplace", locations, observations[1:NobsIC],
+    ICsol <- .Call("regression_Laplace", locations, bary.locations, observations[1:NobsIC],
                   FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC, covariatesIC,
                   incidence_matrix, BC$BC_indices, BC$BC_values,
-                  T, as.integer(1), nrealizations, T, DOF_matrix, search, bary.locations, PACKAGE = "fdaPDE")
+                  T, as.integer(1), nrealizations, T, DOF_matrix, search, GCV.inflation.factor, areal.data.avg, PACKAGE = "fdaPDE")
 
     ## shifting the lambdas interval if the best lambda is the smaller one and retry smoothing
     if((ICsol[[4]][1]+1)==1)
@@ -125,10 +129,10 @@ CPP_smooth.manifold.FEM.time<-function(locations, time_locations, observations, 
       lambdaSIC <- 10^seq(-9,-7,0.1)
       lambdaSIC <- as.matrix(lambdaSIC)
       storage.mode(lambdaSIC) <- "double"
-      ICsol <- .Call("regression_Laplace", locations, observations[1:NobsIC],
+      ICsol <- .Call("regression_Laplace", locations, bary.locations, observations[1:NobsIC],
                     FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC, covariatesIC,
                     incidence_matrix, BC$BC_indices, BC$BC_values,
-                    T, as.integer(1), nrealizations, T, DOF_matrix, search, bary.locations, PACKAGE = "fdaPDE")
+                    T, as.integer(1), nrealizations, T, DOF_matrix, search, GCV.inflation.factor, areal.data.avg, PACKAGE = "fdaPDE")
     }
     else
     {
@@ -138,10 +142,10 @@ CPP_smooth.manifold.FEM.time<-function(locations, time_locations, observations, 
         lambdaSIC <- 10^seq(3,5,0.1)
         lambdaSIC <- as.matrix(lambdaSIC)
         storage.mode(lambdaSIC) <- "double"
-        ICsol <- .Call("regression_Laplace", locations, observations[1:NobsIC],
+        ICsol <- .Call("regression_Laplace", locations, bary.locations, observations[1:NobsIC],
                       FEMbasis$mesh, FEMbasis$order, mydim, ndim, lambdaSIC, covariatesIC,
                       incidence_matrix, BC$BC_indices, BC$BC_values,
-                      T, as.integer(1), nrealizations, T, DOF_matrix, search, bary.locations, PACKAGE = "fdaPDE")
+                      T, as.integer(1), nrealizations, T, DOF_matrix, search, GCV.inflation.factor, areal.data.avg ,PACKAGE = "fdaPDE")
       }
     }
 
@@ -171,9 +175,9 @@ CPP_smooth.manifold.FEM.time<-function(locations, time_locations, observations, 
   storage.mode(BC$BC_indices) <- "integer"
   storage.mode(BC$BC_values) <-"double"
 
-  bigsol <- .Call("regression_Laplace_time", locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
+  bigsol <- .Call("regression_Laplace_time", locations, bary.locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
                   mydim, ndim, lambdaS, lambdaT, covariates, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
-                  IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search, bary.locations, PACKAGE = "fdaPDE")
+                  IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search, GCV.inflation.factor, areal.data.avg, PACKAGE = "fdaPDE")
 
   return(c(bigsol,ICsol))
 }
