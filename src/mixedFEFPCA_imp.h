@@ -123,7 +123,7 @@ void MixedFEFPCABase<Integrator, ORDER, mydim, ndim>::computeBasisEvaluations()
 					coefficients = Eigen::Matrix<Real,Nodes,1>::Zero();
 					coefficients(node) = 1; //Activates only current base
 					evaluator = evaluate_point<Nodes, mydim, ndim>(tri_activated, fpcaData_.getLocations()[i], coefficients);
-					barycenters_(i,node)=evaluator;
+					barycenters_(i,node)=tri_activated.getBaryCoordinates(fpcaData_.getLocations()[i])[node];
 					Psi_.insert(i, tri_activated[node].getId()) = evaluator;
 				}
 			}
