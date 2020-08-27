@@ -1,4 +1,4 @@
-CPP_smooth.FEM.mixed<-function(locations, observations, num_units, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV, GCVMETHOD = 2, nrealizations = 100, DOF=TRUE, DOF_matrix=NULL, search, bary.locations)
+CPP_smooth.FEM.mixed<-function(locations, observations, num_units, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV, GCVMETHOD = 2, nrealizations = 100, DOF=TRUE, DOF_matrix=NULL, search, bary.locations, TESTFLAG)
 {
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
   FEMbasis$mesh$triangles = FEMbasis$mesh$triangles - 1
@@ -72,9 +72,12 @@ CPP_smooth.FEM.mixed<-function(locations, observations, num_units, FEMbasis, lam
   storage.mode(GCVMETHOD) <- "integer"
   storage.mode(search) <- "integer"
 
+  TESTFLAG <- as.integer(TESTFLAG)
+  storage.mode(TESTFLAG) <-"integer"
+
   ## Call C++ function
   bigsol <- .Call("regression_Laplace_mixed", locations, observations, num_units, FEMbasis$mesh, FEMbasis$order,
                   mydim, ndim, lambda, covariates, incidence_matrix, BC$BC_indices, BC$BC_values,
-                  GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search,  bary.locations, PACKAGE = "fdaPDE")
+                  GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, search,  bary.locations, TESTFLAG, PACKAGE = "fdaPDE")
   return(bigsol)
 }

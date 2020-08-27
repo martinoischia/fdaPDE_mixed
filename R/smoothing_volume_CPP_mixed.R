@@ -1,4 +1,4 @@
-CPP_smooth.volume.FEM.mixed<-function(locations, observations, num_units, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV, GCVMETHOD = 2, nrealizations = 100, DOF=TRUE, DOF_matrix=NULL, search, bary.locations)
+CPP_smooth.volume.FEM.mixed<-function(locations, observations, num_units, FEMbasis, lambda, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, GCV, GCVMETHOD = 2, nrealizations = 100, DOF=TRUE, DOF_matrix=NULL, search, bary.locations, TESTFLAG)
 {
 
   # C++ function for volumetric works with vectors not with matrices
@@ -76,9 +76,12 @@ CPP_smooth.volume.FEM.mixed<-function(locations, observations, num_units, FEMbas
   storage.mode(GCVMETHOD) <- "integer"
   storage.mode(search) <- "integer"
 
+  TESTFLAG <- as.integer(TESTFLAG)
+  storage.mode(TESTFLAG) <-"integer"
+  
   ## Call C++ function
   bigsol <- .Call("regression_Laplace_mixed", locations, observations, num_units, FEMbasis$mesh, FEMbasis$mesh$order, mydim, ndim, lambda, covariates,
-                  incidence_matrix, BC$BC_indices, BC$BC_values, GCV, GCVMETHOD, nrealizations,  DOF, DOF_matrix, search, bary.locations, PACKAGE = "fdaPDE")
+                  incidence_matrix, BC$BC_indices, BC$BC_values, GCV, GCVMETHOD, nrealizations,  DOF, DOF_matrix, search, bary.locations, TESTFLAG, PACKAGE = "fdaPDE")
 
   return(bigsol)
 }

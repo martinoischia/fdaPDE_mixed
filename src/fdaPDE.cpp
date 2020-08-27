@@ -146,7 +146,7 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh)
 
 
 template<typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
-SEXP regression_skeleton_mixed(InputHandler &regressionData, SEXP Rmesh)
+SEXP regression_skeleton_mixed(InputHandler &regressionData, SEXP Rmesh, SEXP Rtestflag)
 {
 	MeshHandler<ORDER, mydim, ndim> mesh(Rmesh);
 	MixedFERegression<InputHandler, Integrator,ORDER, IntegratorGaussP3, 0, 0, mydim, ndim> regression(mesh,regressionData);
@@ -176,7 +176,13 @@ SEXP regression_skeleton_mixed(InputHandler &regressionData, SEXP Rmesh)
 
 	//Copy result in R memory
 	SEXP result = NILSXP;
-	result = PROTECT(Rf_allocVector(VECSXP, 5+5+2+3)); //#############added for inference of parameters
+	bool _testflag = INTEGER(Rtestflag)[0];
+	if (_testflag) {
+		result = PROTECT(Rf_allocVector(VECSXP, 5+5+2+3)); //added for inference of parameters	
+	} else {
+		result = PROTECT(Rf_allocVector(VECSXP, 5+5+2));
+	}
+	
 	SET_VECTOR_ELT(result, 0, Rf_allocMatrix(REALSXP, solution(0).size(), solution.size()));
 	SET_VECTOR_ELT(result, 1, Rf_allocVector(REALSXP, solution.size()));
 	SET_VECTOR_ELT(result, 2, Rf_allocVector(REALSXP, solution.size()));
@@ -265,30 +271,33 @@ SEXP regression_skeleton_mixed(InputHandler &regressionData, SEXP Rmesh)
 			rans11[i + barycenters.rows()*j] = barycenters(i,j);
 	}
 
-	// for inference of parameters
-	SET_VECTOR_ELT(result, 12, Rf_allocMatrix(REALSXP, psi.rows(), psi.cols()));
-	Real *rans12 = REAL(VECTOR_ELT(result, 12));
-	for(UInt j = 0; j < psi.cols(); j++)
-	{
-		for(UInt i = 0; i < psi.rows(); i++)
-			rans12[i + psi.rows()*j] = psi.coeff(i,j);
-	}
+	//for inference of parameters
+	if (_testflag) {
+		SET_VECTOR_ELT(result, 12, Rf_allocMatrix(REALSXP, psi.rows(), psi.cols()));
+		Real *rans12 = REAL(VECTOR_ELT(result, 12));
+		for(UInt j = 0; j < psi.cols(); j++)
+		{
+			for(UInt i = 0; i < psi.rows(); i++)
+				rans12[i + psi.rows()*j] = psi.coeff(i,j);
+		}
 
-	SET_VECTOR_ELT(result, 13, Rf_allocMatrix(REALSXP, R0.rows(), R0.cols()));
-	Real *rans13 = REAL(VECTOR_ELT(result, 13));
-	for(UInt j = 0; j < R0.cols(); j++)
-	{
-		for(UInt i = 0; i < R0.rows(); i++)
-			rans13[i + R0.rows()*j] = R0.coeff(i,j);
-	}
+		SET_VECTOR_ELT(result, 13, Rf_allocMatrix(REALSXP, R0.rows(), R0.cols()));
+		Real *rans13 = REAL(VECTOR_ELT(result, 13));
+		for(UInt j = 0; j < R0.cols(); j++)
+		{
+			for(UInt i = 0; i < R0.rows(); i++)
+				rans13[i + R0.rows()*j] = R0.coeff(i,j);
+		}
 
-	SET_VECTOR_ELT(result, 14, Rf_allocMatrix(REALSXP, R1.rows(), R1.cols()));
-	Real *rans14 = REAL(VECTOR_ELT(result, 14));
-	for(UInt j = 0; j < R1.cols(); j++)
-	{
-		for(UInt i = 0; i < R1.rows(); i++)
-			rans14[i + R1.rows()*j] = R1.coeff(i,j);
+		SET_VECTOR_ELT(result, 14, Rf_allocMatrix(REALSXP, R1.rows(), R1.cols()));
+		Real *rans14 = REAL(VECTOR_ELT(result, 14));
+		for(UInt j = 0; j < R1.cols(); j++)
+		{
+			for(UInt i = 0; i < R1.rows(); i++)
+				rans14[i + R1.rows()*j] = R1.coeff(i,j);
+		}
 	}
+	
 
 	UNPROTECT(1);
 	return(result);
@@ -1021,7 +1030,7 @@ SEXP regression_PDE_space_varying_time(SEXP Rlocations, SEXP Rtime_locations, SE
 
 SEXP regression_Laplace_mixed(SEXP Rlocations, SEXP Robservations, SEXP RnumUnits, SEXP Rmesh, SEXP Rorder,SEXP Rmydim, SEXP Rndim,
 					SEXP Rlambda, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues,
-					SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations)
+					SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations, SEXP Rtestflag)
 {
 	//Set input data
 	RegressionData regressionData(Rlocations, Robservations, RnumUnits, Rorder, Rlambda, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, GCV, RGCVmethod, Rnrealizations, DOF, RDOF_matrix, Rsearch, RbaryLocations);
@@ -1030,15 +1039,15 @@ SEXP regression_Laplace_mixed(SEXP Rlocations, SEXP Robservations, SEXP RnumUnit
 	UInt ndim=INTEGER(Rndim)[0];
 
     if(regressionData.getOrder()==1 && mydim==2 && ndim==2)
-    	return(regression_skeleton_mixed<RegressionData,IntegratorTriangleP2, 1, 2, 2>(regressionData, Rmesh));
+    	return(regression_skeleton_mixed<RegressionData,IntegratorTriangleP2, 1, 2, 2>(regressionData, Rmesh, Rtestflag));
     else if(regressionData.getOrder()==2 && mydim==2 && ndim==2)
-		return(regression_skeleton_mixed<RegressionData,IntegratorTriangleP4, 2, 2, 2>(regressionData, Rmesh));
+		return(regression_skeleton_mixed<RegressionData,IntegratorTriangleP4, 2, 2, 2>(regressionData, Rmesh, Rtestflag));
     else if(regressionData.getOrder()==1 && mydim==2 && ndim==3)
-		return(regression_skeleton_mixed<RegressionData,IntegratorTriangleP2, 1, 2, 3>(regressionData, Rmesh));
+		return(regression_skeleton_mixed<RegressionData,IntegratorTriangleP2, 1, 2, 3>(regressionData, Rmesh, Rtestflag));
    else if(regressionData.getOrder()==2 && mydim==2 && ndim==3)
-		return(regression_skeleton_mixed<RegressionData,IntegratorTriangleP4, 2, 2, 3>(regressionData, Rmesh));
+		return(regression_skeleton_mixed<RegressionData,IntegratorTriangleP4, 2, 2, 3>(regressionData, Rmesh, Rtestflag));
 	else if(regressionData.getOrder()==1 && mydim==3 && ndim==3)
-		return(regression_skeleton_mixed<RegressionData,IntegratorTetrahedronP2, 1, 3, 3>(regressionData, Rmesh));
+		return(regression_skeleton_mixed<RegressionData,IntegratorTetrahedronP2, 1, 3, 3>(regressionData, Rmesh, Rtestflag));
     return(NILSXP);
 }
 
