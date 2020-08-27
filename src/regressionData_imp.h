@@ -1,6 +1,7 @@
 #ifndef __REGRESSIONDATA_IMP_HPP__
 #define __REGRESSIONDATA_IMP_HPP__
 
+// space case
 RegressionData::RegressionData(std::vector<Point>& locations, VectorXr& observations, UInt order, std::vector<Real> lambdaS, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF, bool GCV, UInt search, Real tune, bool arealDataAvg):
 					locations_(locations), observations_(observations), covariates_(covariates), incidenceMatrix_(incidenceMatrix),
 					order_(order), lambdaS_(lambdaS), bc_values_(bc_values), bc_indices_(bc_indices), DOF_(DOF), GCV_(GCV), flag_SpaceTime_(false), search_(search), tune_(tune), arealDataAvg_(arealDataAvg)
@@ -17,6 +18,24 @@ RegressionData::RegressionData(std::vector<Point>& locations, VectorXr& observat
 	}
 }
 
+// space-mixed case
+RegressionData::RegressionData(std::vector<Point>& locations, VectorXr& observations, UInt num_units, UInt order, std::vector<Real> lambdaS, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF, bool GCV, UInt search):
+					locations_(locations), observations_(observations), num_units_(num_units), covariates_(covariates), incidenceMatrix_(incidenceMatrix),
+					order_(order), lambdaS_(lambdaS), bc_values_(bc_values), bc_indices_(bc_indices), DOF_(DOF), GCV_(GCV), flag_SpaceTime_(false), flag_Mixed_(true), search_(search)
+{
+	nRegions_ = incidenceMatrix_.rows();
+	if(locations_.size()==0 && nRegions_==0)
+	{
+		locations_by_nodes_ = true;
+		for(int i = 0; i<observations_.size();++i) observations_indices_.push_back(i);
+	}
+	else
+	{
+		locations_by_nodes_ = false;
+	}
+}
+
+// space-time case
 RegressionData::RegressionData(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order, std::vector<Real>& lambdaS, std::vector<Real>& lambdaT, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, VectorXr& ic, bool flag_mass, bool flag_parabolic, bool DOF, bool GCV, UInt search, Real tune, bool arealDataAvg):
 					locations_(locations), time_locations_(time_locations), observations_(observations), covariates_(covariates), incidenceMatrix_(incidenceMatrix),
 					order_(order), lambdaS_(lambdaS), lambdaT_(lambdaT), bc_values_(bc_values), bc_indices_(bc_indices), ic_(ic), flag_mass_(flag_mass), flag_parabolic_(flag_parabolic), DOF_(DOF), GCV_(GCV), flag_SpaceTime_(true), search_(search), tune_(tune),arealDataAvg_(arealDataAvg)
@@ -50,6 +69,7 @@ RegressionData::RegressionData(std::vector<Point>& locations, VectorXr& observat
 	}
 }
 
+// space case
 RegressionDataElliptic::RegressionDataElliptic(std::vector<Point>& locations, VectorXr& observations, UInt order,
 												std::vector<Real> lambdaS, Eigen::Matrix<Real,2,2>& K,
 												Eigen::Matrix<Real,2,1>& beta, Real c, MatrixXr& covariates,
@@ -58,6 +78,16 @@ RegressionDataElliptic::RegressionDataElliptic(std::vector<Point>& locations, Ve
 		 RegressionData(locations, observations, order, lambdaS, covariates, incidenceMatrix, bc_indices, bc_values, DOF, GCV, search, tune, arealDataAvg), K_(K), beta_(beta), c_(c)
 {;}
 
+// space-mixed case
+RegressionDataElliptic::RegressionDataElliptic(std::vector<Point>& locations, VectorXr& observations, UInt num_units, UInt order,
+												std::vector<Real> lambdaS, Eigen::Matrix<Real,2,2>& K,
+												Eigen::Matrix<Real,2,1>& beta, Real c, MatrixXr& covariates,
+												MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices,
+												std::vector<Real>& bc_values, bool DOF, bool GCV, UInt search):
+		 RegressionData(locations, observations, num_units, order, lambdaS, covariates, incidenceMatrix, bc_indices, bc_values, DOF, GCV, search), K_(K), beta_(beta), c_(c)
+{;}
+
+// space-time case
 RegressionDataElliptic::RegressionDataElliptic(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order,
 												std::vector<Real>& lambdaS, std::vector<Real>& lambdaT, Eigen::Matrix<Real,2,2>& K,
 												Eigen::Matrix<Real,2,1>& beta, Real c, MatrixXr& covariates,
@@ -67,6 +97,7 @@ RegressionDataElliptic::RegressionDataElliptic(std::vector<Point>& locations, st
 		 										K_(K), beta_(beta), c_(c)
 {;}
 
+// space case
 RegressionDataEllipticSpaceVarying::RegressionDataEllipticSpaceVarying(std::vector<Point>& locations,
 									VectorXr& observations, UInt order, std::vector<Real> lambdaS,
 									const std::vector<Eigen::Matrix<Real,2,2>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,2> > >& K,
@@ -77,6 +108,18 @@ RegressionDataEllipticSpaceVarying::RegressionDataEllipticSpaceVarying(std::vect
 		RegressionData(locations, observations, order, lambdaS, covariates, incidenceMatrix, bc_indices, bc_values, DOF, GCV, search, tune, arealDataAvg), K_(K), beta_(beta), c_(c), u_(u)
 {;}
 
+// space-mixed case
+RegressionDataEllipticSpaceVarying::RegressionDataEllipticSpaceVarying(std::vector<Point>& locations,
+									VectorXr& observations, UInt num_units, UInt order, std::vector<Real> lambdaS,
+									const std::vector<Eigen::Matrix<Real,2,2>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,2> > >& K,
+									const std::vector<Eigen::Matrix<Real,2,1>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,1> > >& beta,
+									const std::vector<Real>& c, const std::vector<Real>& u,
+									MatrixXr& covariates, MatrixXi& incidenceMatrix,
+									std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF, bool GCV, UInt search):
+		RegressionData(locations, observations, num_units, order, lambdaS, covariates, incidenceMatrix, bc_indices, bc_values, DOF, GCV, search), K_(K), beta_(beta), c_(c), u_(u)
+{;}
+
+// space-time case
 RegressionDataEllipticSpaceVarying::RegressionDataEllipticSpaceVarying(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order,
 												std::vector<Real>& lambdaS, std::vector<Real>& lambdaT,
 									const std::vector<Eigen::Matrix<Real,2,2>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,2> > >& K,
@@ -137,6 +180,7 @@ RegressionData::RegressionData(SEXP Rlocations, SEXP RbaryLocations, SEXP Robser
 							SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP Rtune, SEXP RarealDataAvg)
 {
 	flag_SpaceTime_=false;
+	flag_Mixed_=false;
 
 	setLocations(Rlocations);
 	setBaryLocations(RbaryLocations);
@@ -147,7 +191,42 @@ RegressionData::RegressionData(SEXP Rlocations, SEXP RbaryLocations, SEXP Robser
 	setDOF_matrix(RDOF_matrix);
 
 	GCVmethod_ = INTEGER(RGCVmethod)[0];
+	order_ =  INTEGER(Rorder)[0];
+	search_ =  INTEGER(Rsearch)[0];
+	GCV_ = INTEGER(GCV)[0];
+	DOF_ = INTEGER(DOF)[0];
+	UInt length_indexes = Rf_length(RBCIndices);
 
+	bc_indices_.assign(INTEGER(RBCIndices), INTEGER(RBCIndices) +  length_indexes);
+
+	bc_values_.assign(REAL(RBCValues),REAL(RBCValues) + Rf_length(RBCIndices));
+
+  UInt length_lambda = Rf_length(RlambdaS);
+  for (UInt i = 0; i<length_lambda; ++i)  lambdaS_.push_back(REAL(RlambdaS)[i]);
+
+	lambdaT_.push_back(0);
+}
+
+
+// space-mixed case
+RegressionData::RegressionData(SEXP Rlocations, SEXP Robservations, SEXP RnumUnits, SEXP Rorder, SEXP RlambdaS, SEXP Rcovariates,
+							SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP GCV, SEXP RGCVmethod,
+							SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations)
+{
+	flag_SpaceTime_=false;
+	flag_Mixed_=true;
+
+	setLocations(Rlocations);
+	setBaryLocations(RbaryLocations);
+	setIncidenceMatrix(RincidenceMatrix);
+	setObservationsMixed(Robservations);
+	setCovariates(Rcovariates);
+	setNrealizations(Rnrealizations);
+	setDOF_matrix(RDOF_matrix);
+
+	GCVmethod_ = INTEGER(RGCVmethod)[0];
+
+	num_units_ = INTEGER(RnumUnits)[0];
 	order_ =  INTEGER(Rorder)[0];
 	search_ =  INTEGER(Rsearch)[0];
 	GCV_ = INTEGER(GCV)[0];
@@ -167,11 +246,13 @@ RegressionData::RegressionData(SEXP Rlocations, SEXP RbaryLocations, SEXP Robser
 	arealDataAvg_ = INTEGER(RarealDataAvg)[0];
 }
 
+// space-time case
 RegressionData::RegressionData(SEXP Rlocations, SEXP RbaryLocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP Rcovariates,
 						SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP GCV, SEXP RGCVmethod,
 						SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP Rtune, SEXP RarealDataAvg)
 {
 	flag_SpaceTime_ = true;
+	flag_Mixed_=false;
 
 	setLocations(Rlocations);
 	setTimeLocations(Rtime_locations);
@@ -212,7 +293,7 @@ RegressionData::RegressionData(SEXP Rlocations, SEXP RbaryLocations, SEXP Rtime_
 
 }
 
-
+// space case
 RegressionDataElliptic::RegressionDataElliptic(SEXP Rlocations, SEXP RbaryLocations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RK, SEXP Rbeta,
 				 SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP Rtune, SEXP RarealDataAvg):
 	RegressionData(Rlocations, RbaryLocations, Robservations, Rorder, RlambdaS, Rcovariates, RincidenceMatrix,
@@ -236,6 +317,31 @@ RegressionDataElliptic::RegressionDataElliptic(SEXP Rlocations, SEXP RbaryLocati
 	c_ =  REAL(Rc)[0];
 }
 
+// space-mixed case
+RegressionDataElliptic::RegressionDataElliptic(SEXP Rlocations, SEXP Robservations, SEXP RnumUnits, SEXP Rorder, SEXP RlambdaS, SEXP RK, SEXP Rbeta,
+				 SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations):
+	RegressionData(Rlocations, Robservations, RnumUnits, Rorder, RlambdaS, Rcovariates, RincidenceMatrix,
+					 			   RBCIndices, RBCValues, GCV, RGCVmethod, Rnrealizations, DOF, RDOF_matrix, Rsearch, RbaryLocations)
+{
+	K_.resize(2, 2);
+	for(auto i=0; i<2; ++i)
+	{
+		for(auto j=0; j<2 ; ++j)
+		{
+			K_(i,j)=REAL(RK)[i+ 2*j];
+		}
+	}
+
+	beta_.resize(2);
+	for(auto i=0; i<2 ; ++i)
+	{
+		beta_(i)=REAL(Rbeta)[i];
+	}
+
+	c_ =  REAL(Rc)[0];
+}
+
+// space-time case
 RegressionDataElliptic::RegressionDataElliptic(SEXP Rlocations, SEXP RbaryLocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
 		SEXP Rbeta, SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric,	SEXP GCV,SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP Rtune, SEXP RarealDataAvg):
 	RegressionData(Rlocations, RbaryLocations, Rtime_locations, Robservations, Rorder, RlambdaS, RlambdaT, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, Rflag_mass, Rflag_parabolic, Ric, GCV, RGCVmethod, Rnrealizations, DOF, RDOF_matrix, Rsearch, Rtune, RarealDataAvg)
@@ -258,12 +364,21 @@ RegressionDataElliptic::RegressionDataElliptic(SEXP Rlocations, SEXP RbaryLocati
 	c_ =  REAL(Rc)[0];
 }
 
+// space case
 RegressionDataEllipticSpaceVarying::RegressionDataEllipticSpaceVarying(SEXP Rlocations, SEXP RbaryLocations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RK, SEXP Rbeta,
 				 SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP Rtune, SEXP RarealDataAvg):
 					 RegressionData(Rlocations, RbaryLocations, Robservations, Rorder, RlambdaS, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, GCV,RGCVmethod, Rnrealizations, DOF, RDOF_matrix, Rsearch, Rtune, RarealDataAvg),
 					 K_(RK), beta_(Rbeta), c_(Rc), u_(Ru)
 {;}
 
+// space-mixed case
+RegressionDataEllipticSpaceVarying::RegressionDataEllipticSpaceVarying(SEXP Rlocations, SEXP Robservations, SEXP RnumUnits, SEXP Rorder, SEXP RlambdaS, SEXP RK, SEXP Rbeta,
+				 SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP RbaryLocations):
+					 RegressionData(Rlocations, Robservations, RnumUnits, Rorder, RlambdaS, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, GCV,RGCVmethod, Rnrealizations, DOF, RDOF_matrix, Rsearch, RbaryLocations),
+					 K_(RK), beta_(Rbeta), c_(Rc), u_(Ru)
+{;}
+
+// space-time case
 RegressionDataEllipticSpaceVarying::RegressionDataEllipticSpaceVarying(SEXP Rlocations, SEXP RbaryLocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
 		SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix, SEXP Rsearch, SEXP Rtune, SEXP RarealDataAvg):
 					 RegressionData(Rlocations, RbaryLocations, Rtime_locations, Robservations, Rorder, RlambdaS, RlambdaT, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, Rflag_mass, Rflag_parabolic, Ric, GCV, RGCVmethod, Rnrealizations, DOF, RDOF_matrix, Rsearch, Rtune, RarealDataAvg),
@@ -370,6 +485,32 @@ void RegressionData::setObservations(SEXP Robservations)
 		}
 	}
 
+	//std::cout<<"Observations #"<<observations_.size()<<std::endl<<observations_<<std::endl;
+	//for(auto i=0;i<observations_indices_.size();++i)	std::cout<<observations_indices_[i]<<std::endl;
+}
+
+void RegressionData::setObservationsMixed(SEXP Robservations)
+{
+	UInt n_obs_ = Rf_length(Robservations);
+	observations_.resize(n_obs_);
+	observations_indices_.reserve(n_obs_);
+
+	UInt count = 0;
+	locations_by_nodes_ = (locations_.size() == 0 && nRegions_ == 0) ? true : false;
+
+	for(auto i=0;i<n_obs_;++i)
+	{
+		if(!ISNA(REAL(Robservations)[i]))
+		{
+			observations_(i) = REAL(Robservations)[i];
+			observations_indices_.push_back(i);
+		}
+		else
+		{
+			observations_(i) = 0.0;
+			observations_na_.push_back(i);
+		}
+	}
 	//std::cout<<"Observations #"<<observations_.size()<<std::endl<<observations_<<std::endl;
 	//for(auto i=0;i<observations_indices_.size();++i)	std::cout<<observations_indices_[i]<<std::endl;
 }

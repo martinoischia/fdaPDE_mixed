@@ -59,13 +59,20 @@ template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename I
 void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::setPsi()
 {
 	UInt nnodes = mesh_.num_nodes();
-	UInt nlocations = regressionData_.isSpaceTime() ? regressionData_.getNumberofSpaceObservations() : regressionData_.getNumberofObservations();
+	UInt nlocations;
+	if (regressionData_.isSpaceTime() && !regressionData_.isMixed()) { //space-time case
+		nlocations = regressionData_.getNumberofSpaceObservations();
+	} else if (regressionData_.isMixed() && !regressionData_.isSpaceTime()) { //space-mixed case
+		nlocations = regressionData_.getNumberofMixedObservations();
+	} else {
+		nlocations = regressionData_.getNumberofObservations();
+	}
 
 	psi_.resize(nlocations, nnodes);
-	if (regressionData_.isLocationsByNodes() & !regressionData_.isLocationsByBarycenter()) //pointwise data
+	if (regressionData_.isLocationsByNodes()) //pointwise data
 	{
 		std::vector<coeff> tripletAll;
-		if(!regressionData_.isSpaceTime())
+		if(!regressionData_.isSpaceTime() && !regressionData_.isMixed()) //space case
 		{
 			auto k = regressionData_.getObservationsIndices();
 			tripletAll.reserve(k.size());
@@ -73,7 +80,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 				tripletAll.push_back(coeff(i,k[i],1.0));
 			}
 		}
-		else
+		else //space-time and space-mixed case (assumes the same spatial locations)
 		{
 			tripletAll.reserve(nlocations);
 			for (int i = 0; i< nlocations; ++i){
@@ -83,7 +90,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 		psi_.setFromTriplets(tripletAll.begin(),tripletAll.end());
 		psi_.makeCompressed();
 	}
-	else if (regressionData_.isLocationsByBarycenter() && (regressionData_.getNumberOfRegions() == 0)) //pointwise data
+	else if (regressionData_.getNumberOfRegions() == 0 && regressionData_.isLocationsByBarycenter()) //pointwise data
 	{
 		constexpr UInt Nodes = mydim==2 ? 3*ORDER : 6*ORDER-2;
 		Element<Nodes, mydim, ndim> tri_activated;
@@ -111,7 +118,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 		} //end of for loop
 		psi_.makeCompressed();
 	}
-	else if ((!regressionData_.isLocationsByBarycenter()) && (regressionData_.getNumberOfRegions() == 0))
+	else if (regressionData_.getNumberOfRegions() == 0 && !regressionData_.isLocationsByBarycenter())
 	{
 		constexpr UInt Nodes = mydim==2 ? 3*ORDER : 6*ORDER-2;
 		Element<Nodes, mydim, ndim> tri_activated;
@@ -330,7 +337,15 @@ template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename I
 void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::setA()
 {
 	UInt nRegions = regressionData_.getNumberOfRegions();
-	UInt m = regressionData_.isSpaceTime() ? regressionData_.getNumberofTimeObservations():1;
+	UInt m;
+	if (regressionData_.isSpaceTime() && !regressionData_.isMixed()) { //space-time case
+		m = regressionData_.getNumberofTimeObservations();
+	} else if (regressionData_.isMixed() && !regressionData_.isSpaceTime()) { //space-mixed case
+		m = regressionData_.getNumberofUnits();
+	} else { //space case
+		m = 1;
+	}
+  
 	if( !this->regressionData_.isArealDataAvg() ){//areal data for FPIRLS
 		A_ = VectorXr::Ones(m*nRegions);  
 	}else{
@@ -361,7 +376,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 
 	if (regressionData_.getCovariates().rows() == 0) //no covariate
 	{
-		if (regressionData_.isLocationsByNodes() && !regressionData_.isSpaceTime())
+		if (regressionData_.isLocationsByNodes() && !regressionData_.isSpaceTime() && !regressionData_.isMixed()) //space case
 		{
 				VectorXr tmp = LeftMultiplybyQ(regressionData_.getObservations());
 				for (auto i=0; i<nlocations;++i)
@@ -370,7 +385,8 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 					rightHandData(index_i) = tmp(i);
 				}
 		}
-		else if (regressionData_.isLocationsByNodes() && regressionData_.isSpaceTime() && regressionData_.getFlagParabolic())
+		else if ((regressionData_.isLocationsByNodes() && regressionData_.isSpaceTime() && regressionData_.getFlagParabolic()) ||
+					regressionData_.isLocationsByNodes() && regressionData_.isMixed()) //space-time (parabolic) or space-mixed case
 		{
 			for (auto i=0; i<regressionData_.getObservationsIndices().size();++i)
 			{
@@ -422,7 +438,7 @@ void MixedFERegressionBase<InputHandler, IntegratorSpace, ORDER, IntegratorTime,
 	else
 		dataHat = z - LeftMultiplybyQ(z) + LeftMultiplybyQ(psi_*_solution(output_indexS,output_indexT).topRows(psi_.cols()));
 	UInt n = dataHat.rows();
-	if(regressionData_.isSpaceTime())
+	if(regressionData_.isSpaceTime() || regressionData_.isMixed()) //space-time or space-mixed case (taking into account NA)
 		{
 			const std::vector<UInt>& observations_na= regressionData_.getObservationsNA();
 			for(UInt id:observations_na)
@@ -608,6 +624,42 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 }
 
 template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
+void MixedFERegressionBase<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::buildSpaceMixedMatrices()
+{
+	SpMat IM(M_,M_);
+	IM.setIdentity();
+
+	// Make the Kronecker product to tensorize the system
+	SpMat psi_temp =  psi_;
+	SpMat R1_temp = R1_;
+	SpMat R0_temp = R0_;
+	psi_.resize(N_*M_,N_*M_);
+	psi_ = kroneckerProduct(IM,psi_temp);
+	addNA();
+	R1_.resize(N_*M_,N_*M_);
+	R1_ = kroneckerProduct(IM,R1_temp);
+	R1_.makeCompressed();
+	R0_.resize(N_*M_,N_*M_);
+	R0_ = kroneckerProduct(IM,R0_temp);
+	R0_.makeCompressed();
+
+	//! right hand side correction for the forcing term:
+
+	if(this->isSpaceVarying)
+	{
+		VectorXr forcingTerm = rhs_ft_correction_;
+		rhs_ft_correction_.resize(M_*N_);
+		for(UInt i=0; i<N_; i++)
+		{
+			for(UInt j=0; j<M_; j++)
+			{
+				rhs_ft_correction_(i+j*N_) = forcingTerm(i);
+			}
+		}
+	}
+}
+
+template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
 void MixedFERegressionBase<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::buildSpaceTimeMatrices()
 {
 	SpMat IM(M_,M_);
@@ -689,7 +741,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 	}
 
 	if(!isPsiComputed){
-		setPsi();
+		setPsi(); //considers all space, spacemixed, spacetime cases
 		isPsiComputed = true;
 	}
 
@@ -710,9 +762,12 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 
 	}
 
-	if (regressionData_.isSpaceTime())
+	if (regressionData_.isSpaceTime()) //space-time case
 	{
 		buildSpaceTimeMatrices();
+	} else if (regressionData_.isMixed()) //space-mixed case
+	{
+		buildSpaceMixedMatrices();
 	}
 
 	VectorXr rightHandData;
