@@ -1,6 +1,6 @@
 smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
                      covariates, random_effect = NULL, PDE_parameters=NULL, incidence_matrix = NULL,
-                     BC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL, search = "tree", bary.locations = NULL)
+                     BC = NULL, GCV = FALSE, GCVmethod = "Stochastic", TESTFLAG = FALSE, nrealizations = 100, DOF_matrix=NULL, search = "tree", bary.locations = NULL)
 {
   if(class(FEMbasis$mesh) == "mesh.2D"){
     ndim = 2
@@ -92,7 +92,8 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     }
   }
 
-  # Start of covariate conversion
+  orig_covariates = covariates
+  # Start of implementative covariate conversion
   # find number of statistical units, m
   num_units = dim(observations)[2]
   
@@ -106,7 +107,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   #transform matrix data to vector data
   observations<-as.vector(observations)
 
-  # convert into official coeff (length: q + m*p)
+  # convert into implementative ver. (length: (q-p) + m*p)
   matrixV = matrix(0, N, p*m)
 
   if (p<q && p!=0) { #random-effect as subset
@@ -127,10 +128,30 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     covariates = matrixX
 
   }
-  # else if (p==0) { #no random-effect
+  # else if (p==0) { #no random-effect (keep it as it is)
   #   covariates = as.matrix(covariates)
   # }
-  ### End of covariate conversion
+  ### End of implementative covariate conversion
+
+
+
+  # Start of official covariate conversion (to be used in hypothesis testing)
+  matrixV= matrix(0, N, p*(m-1))
+
+  if ((p<q && p!=0) || (p==q)) { #random-effect as subset OR random-effect as full set
+    random_cov = as.matrix(orig_covariates[,random_effect])
+    for (i in 1:(m-1)) {
+      matrixV[((i-1)*n + 1):(i*n), ((i-1)*p + 1):(i*p)] = random_cov[((i-1)*n + 1):(i*n),]
+    }
+
+    for (i in 1:n) {
+      matrixV[((m-1)*n + i), ] = -rep(random_cov[((m-1)*n + i),], (m-1))
+    }
+    official_covariates= cbind(orig_covariates,matrixV)
+  } else if (p==0) { #no random-effect
+    official_covariates = as.matrix(covariates)
+  }
+  ### End of official covariate conversion
 
   ################## End checking parameters, sizes and conversion #############################
 
@@ -140,7 +161,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     print('C++ Code Execution')
     bigsol = CPP_smooth.FEM.mixed(locations=locations, observations=observations, num_units=num_units, FEMbasis=FEMbasis, lambda=lambda,
                                   covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
-                                  BC=BC, GCV=GCV,GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
+                                  BC=BC, GCV=GCV,GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations, TESTFLAG=TESTFLAG)
 
   } else if(class(FEMbasis$mesh) == 'mesh.2D' & !is.null(PDE_parameters) & space_varying==FALSE){
 
@@ -149,7 +170,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     bigsol = CPP_smooth.FEM.PDE.mixed(locations=locations, observations=observations, num_units=num_units, FEMbasis=FEMbasis, lambda=lambda,
                                       PDE_parameters = PDE_parameters,
                                       covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
-                                      BC=BC, GCV=GCV,GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
+                                      BC=BC, GCV=GCV,GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations, TESTFLAG=TESTFLAG)
 
   } else if(class(FEMbasis$mesh) == 'mesh.2D' & !is.null(PDE_parameters) & space_varying==TRUE){
 
@@ -158,7 +179,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     bigsol = CPP_smooth.FEM.PDE.sv.mixed(locations=locations, observations=observations, num_units=num_units, FEMbasis=FEMbasis, lambda=lambda,
                                          PDE_parameters = PDE_parameters,
                                          covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
-                                         BC=BC, GCV=GCV,GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
+                                         BC=BC, GCV=GCV,GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations, TESTFLAG=TESTFLAG)
   }
   else if(class(FEMbasis$mesh) == 'mesh.2.5D'){
 
@@ -168,7 +189,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     #   stop("The option locations!=NULL for manifold domains is currently not implemented")
     bigsol = CPP_smooth.manifold.FEM.mixed(locations=locations, observations=observations, num_units=num_units, FEMbasis=FEMbasis, lambda=lambda, 
                                           covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim, 
-                                          BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
+                                          BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations, TESTFLAG=TESTFLAG)
   
   }else if(class(FEMbasis$mesh) == 'mesh.3D'){
 
@@ -176,7 +197,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     print('C++ Code Execution')
     bigsol = CPP_smooth.volume.FEM.mixed(locations=locations, observations=observations, num_units=num_units, FEMbasis=FEMbasis, lambda=lambda, 
                                         covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim, 
-                                        BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations)
+                                        BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, DOF=DOF,DOF_matrix=DOF_matrix, search=search, bary.locations=bary.locations, TESTFLAG=TESTFLAG)
   }
 
   f = bigsol[[1]][1 : (m*nrow(FEMbasis$mesh$nodes)),]
@@ -188,7 +209,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
 
   
   # Start of coefficient conversion
-  matrixX = matrix(data=bigsol[[5]],nrow=ncol(covariates),ncol=length(lambda)) #implementative coeff (length: (q-p) + m*p)
+  matrixX = matrix(data=bigsol[[5]],nrow=ncol(covariates),ncol=length(lambda)) #implementative ver. (length: (q-p) + m*p)
 
   if (p != 0) { #exists random-effect
 
@@ -277,20 +298,94 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   }
   class(bary.locations) = "bary.locations"
 
-  # for inference of parameters
-  psi = bigsol[[13]]
-  R0 = bigsol[[14]]
-  R1 = bigsol[[15]]
+  
+
+  # for hypothesis testing (coeff: before the conversion)
+  if(GCV == TRUE && TESTFLAG == TRUE) {
+    # for inference of parameters
+    psi = bigsol[[13]]
+    R0 = bigsol[[14]]
+    R1 = bigsol[[15]]
+    
+    stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
+    # pure_obs_len = length(which(!is.na(observations)))
+    # stderr=sqrt(GCV_*(pure_obs_len-dof)/pure_obs_len)
+    test.ingredient=test.ingredient(beta = beta[,bestlambda], b_i = b_i[,bestlambda], covariates = official_covariates, 
+                                    psi = psi, R0 = R0, R1= R1, stderr=stderr[bestlambda],
+                                    nlocs=n, num_units = num_units, bestlambda = bestlambda)
+  }
 
   # Prepare return list
   reslist = NULL
   if(GCV == TRUE) {
     stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
+    # pure_obs_len = length(which(!is.na(observations)))
+    # stderr=sqrt(GCV_*(pure_obs_len-dof)/pure_obs_len)
     reslist=list(fit.FEM.mixed = fit.FEM.mixed, PDEmisfit.FEM.mixed = PDEmisfit.FEM.mixed, 
-      beta = beta, b_i = b_i, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, psi=psi, R0=R0, R1=R1, bary.locations = bary.locations)
+      beta = beta, b_i = b_i, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, bary.locations = bary.locations)
+
+    if (TESTFLAG == TRUE) {
+      reslist=list(fit.FEM.mixed = fit.FEM.mixed, PDEmisfit.FEM.mixed = PDEmisfit.FEM.mixed, 
+      beta = beta, b_i = b_i, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, test.ingredient= test.ingredient, bary.locations = bary.locations)
+    }
+
   }else {
-    reslist=list(fit.FEM.mixed = fit.FEM.mixed, PDEmisfit.FEM.mixed = PDEmisfit.FEM.mixed, beta = beta, b_i = b_i, psi=psi, R0=R0, R1=R1, bary.locations = bary.locations)
+    reslist=list(fit.FEM.mixed = fit.FEM.mixed, PDEmisfit.FEM.mixed = PDEmisfit.FEM.mixed, beta = beta, b_i = b_i, bary.locations = bary.locations)
   }
 
+
   return(reslist)
+}
+
+
+test.ingredient<-function(beta, b_i, covariates, psi, R0, R1, stderr, nlocs, num_units, bestlambda) {
+  P = t(R1)%*%solve(R0)%*%R1
+  W = covariates #already in the form of official design matrix
+
+  # step 0: need to exclude from b_i
+  if (!is.null(b_i)) {
+    exclude_ind = seq(num_units, length(b_i), num_units)
+    official_b_i = b_i[-exclude_ind]
+  }
+
+  # step 1: find matrix S
+  Q=diag(nlocs*num_units)-(W%*%(solve(t(W)%*%W))%*%t(W))
+  S=psi%*%(solve(t(psi)%*%Q%*%psi + bestlambda*P))%*%t(psi)%*%Q
+  trS = sum(diag(S))
+
+  #step2: sigma^2 estimate
+  # f_hat=eval.FEM.mixed(mod2$fit.FEM,
+                     # locations = loc)[,minGCVind]
+  # f_hat=as.matrix(f_hat)
+  # z_hat = as.vector(f_hat + W%*%coeff)
+  # qq=dim(W)[2]
+  # est_sig2 = sum((z-z_hat)^2)/(nlocs*3-qq-trS)
+  est_sig2 = stderr^2
+
+  # step3: Var of beta estimates
+  varcov = est_sig2*solve(t(W)%*%W) +
+    est_sig2*solve(t(W)%*%W)%*%t(W)%*%S%*%t(S)%*%W%*%solve(t(W)%*%W)
+
+  # step4: change the name row and column
+  beta_name=c()
+  for (i in 1:length(beta)) {
+    temp=paste('beta_', as.character(i),sep="")
+    beta_name=c(beta_name, temp)
+  }
+  names(beta) = beta_name
+
+  if (!is.null(b_i)) {
+    varcov_name = c(names(beta), names(official_b_i))
+    rownames(varcov) = varcov_name
+    colnames(varcov) = varcov_name
+    test.ingredient = list(coeff = c(beta, official_b_i), varcov = varcov) 
+  } else {
+    varcov_name = names(beta)
+    rownames(varcov) = varcov_name
+    colnames(varcov) = varcov_name
+    test.ingredient = list(coeff = beta, varcov = varcov) 
+  }
+
+     
+  return (test.ingredient)
 }
