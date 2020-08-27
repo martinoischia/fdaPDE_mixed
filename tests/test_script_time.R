@@ -146,10 +146,21 @@ observations=matrix(Data,nrow(SpacePoints),length(time_mesh))
 GCVFLAG=T
 GCVMETHODFLAG='Exact'
 
-Sol = smooth.FEM.time(locations = SpacePoints, observations = observations,
-                      time_mesh=time_mesh, FEMbasis = FEMbasis, FLAG_PARABOLIC = TRUE,
-                      lambdaS = lambdaS, lambdaT = lambdaT, BC = BC,
-                      GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG )
+Sol = smooth.FEM.time(locations = SpacePoints, 
+                      observations = observations,
+                      time_mesh=time_mesh, 
+                      FEMbasis = FEMbasis, 
+                      FLAG_PARABOLIC = TRUE,
+                      lambdaS = lambdaS, 
+                      lambdaT = lambdaT, 
+                      BC = BC,
+                      GCV=GCVFLAG,
+                      GCVmethod = GCVMETHODFLAG )
+observations[3,1]=NA
+observations[10,2]=NA
+observations[15,3]=NA
+observations[25,4]=NA
+observations[47,5]=NA
 
 image(Sol$fit.FEM.time,1)
 plot(Sol$fit.FEM.time,1)
@@ -255,8 +266,9 @@ RMSE(sol_eval,sol_exact)
 
 rm(list=ls())
 
-data(hub25Ddata)
-mesh <- create.mesh.2.5D(nodes = nodes,triangles = triangles)
+# data(hub25Ddata)
+data("hub2.5D")
+mesh <- create.mesh.2.5D(nodes = hub2.5D$hub2.5D.nodes,triangles = hub2.5D$hub2.5D.triangles)
 FEMbasis <- create.FEM.basis(mesh)
 
 # Locations at nodes

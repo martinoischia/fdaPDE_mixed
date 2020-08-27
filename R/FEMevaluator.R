@@ -272,7 +272,8 @@ eval.FEM.mixed <- function(FEM.mixed, locations=NULL, incidence_matrix = NULL, s
 #' ## Compute the coeff vector evaluating the desired function at the mesh nodes
 #' ## In this case we consider the fs.test() function introduced by Wood et al. 2008
 #' time = 1:5
-#' coeff = rep(fs.test(mesh$nodes[,1], mesh$nodes[,2]),5)*time
+#' coeff = rep(fs.test(mesh$nodes[,1], mesh$nodes[,2], exclude = FALSE),5)*
+#'              rep(time, each = nrow(mesh$nodes)) 
 #' ## Create the FEM.time object
 #' FEM_time_function = FEM.time(coeff=coeff, time_mesh=1:5, FEMbasis=FEMbasis, FLAG_PARABOLIC=TRUE)
 #'
@@ -286,6 +287,10 @@ eval.FEM.time <- function(FEM.time, locations = NULL, time.instants = NULL, spac
     stop("FEM.time required;  is NULL.")
   if(class(FEM.time) != "FEM.time")
     stop("'FEM.time' is not of class 'FEM.time'")
+  
+  if(is.vector(locations)){
+    locations = matrix(locations, ncol = 2)
+  }
   
   # save flag for areal evaluation
   FLAG_AREAL_EVALUATION = FALSE
@@ -370,10 +375,10 @@ eval.FEM.time <- function(FEM.time, locations = NULL, time.instants = NULL, spac
     stop("search must be either tree or naive or walking.")
   
   if(class(FEM.time$FEMbasis$mesh)=='mesh.2.5D' & search ==3)
-  	stop("2.5D search must be either tree or naive.")
+    stop("2.5D search must be either tree or naive.")
 
   if(class(FEM.time$FEMbasis$mesh)=='mesh.3D' & search ==3)
-  	stop("3D search must be either tree or naive.")
+    stop("3D search must be either tree or naive.")
 
 
   if(dim(FEM.time$coeff)[2]>1||dim(FEM.time$coeff)[3]>1)
@@ -505,49 +510,49 @@ eval.FEM.time <- function(FEM.time, locations = NULL, time.instants = NULL, spac
 #   return(evalmat)
 # }
 #
-# R_insideIndex = function (mesh, location)
-# {
-#   #  insideIndex returns the index of the triangle containing the point
-#   # (X,Y) if such a triangle exists, and NaN otherwise.
-#   #  TRICOEF may have already been calculated for efficiency,
-#   #  but if the function is called with four arguments, it is calculated.
-#
-#
-#   eps=2.2204e-016
-#   small = 10000*eps
-#
-#   nodes = mesh$nodes
-#   triangles = mesh$triangles
-#   X = location[1]
-#   Y = location[2]
-#
-#   ntri   = dim(triangles)[[1]]
-#   indtri   = matrix(1:ntri,ncol=1)
-#
-#   #  compute coefficients for computing barycentric coordinates if needed
-#
-#   tricoef = R_tricoefCal(mesh)
-#
-#   #  compute barycentric coordinates
-#   r3 = X - nodes[triangles[,3],1]
-#   s3 = Y - nodes[triangles[,3],2]
-#   lam1 = ( tricoef[,4]*r3 - tricoef[,2]*s3)
-#   lam2 = (-tricoef[,3]*r3 + tricoef[,1]*s3)
-#   lam3 = 1 - lam1 - lam2
-#
-#   #  test these coordinates for a triple that are all between 0 and 1
-#   int  = (-small <= lam1 & lam1 <= 1+small) &
-#     (-small <= lam2 & lam2 <= 1+small) &
-#     (-small <= lam3 & lam3 <= 1+small)
-#
-#   #  return the index of this triple, or NaN if it doesn't exist
-#   indi = indtri[int]
-#   if (length(indi)<1)
-#   {
-#     ind = NA
-#   }else{
-#     ind = min(indi)
-#   }
-#
-#   ind
-# }
+R_insideIndex = function (mesh, location)
+{
+  #  insideIndex returns the index of the triangle containing the point
+  # (X,Y) if such a triangle exists, and NaN otherwise.
+  #  TRICOEF may have already been calculated for efficiency,
+  #  but if the function is called with four arguments, it is calculated.
+
+
+  eps=2.2204e-016
+  small = 10000*eps
+
+  nodes = mesh$nodes
+  triangles = mesh$triangles
+  X = location[1]
+  Y = location[2]
+
+  ntri   = dim(triangles)[[1]]
+  indtri   = matrix(1:ntri,ncol=1)
+
+  #  compute coefficients for computing barycentric coordinates if needed
+
+  tricoef = R_tricoefCal(mesh)
+
+  #  compute barycentric coordinates
+  r3 = X - nodes[triangles[,3],1]
+  s3 = Y - nodes[triangles[,3],2]
+  lam1 = ( tricoef[,4]*r3 - tricoef[,2]*s3)
+  lam2 = (-tricoef[,3]*r3 + tricoef[,1]*s3)
+  lam3 = 1 - lam1 - lam2
+
+  #  test these coordinates for a triple that are all between 0 and 1
+  int  = (-small <= lam1 & lam1 <= 1+small) &
+    (-small <= lam2 & lam2 <= 1+small) &
+    (-small <= lam3 & lam3 <= 1+small)
+
+  #  return the index of this triple, or NaN if it doesn't exist
+  indi = indtri[int]
+  if (length(indi)<1)
+  {
+    ind = NA
+  }else{
+    ind = min(indi)
+  }
+
+  ind
+}
