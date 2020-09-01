@@ -42,6 +42,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   if(!is.null(DOF_matrix))
     DOF=FALSE
 
+  random_effect = sort(random_effect) #sort the index of random_effect
   space_varying=checkSmoothingParameters_mixed(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda, covariates=covariates, random_effect=random_effect, incidence_matrix=incidence_matrix, 
     BC=BC, GCV=GCV, PDE_parameters=PDE_parameters, GCVmethod=GCVMETHOD , nrealizations=nrealizations, search=search, bary.locations=bary.locations)
   
@@ -307,9 +308,9 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     R0 = bigsol[[14]]
     R1 = bigsol[[15]]
     
-    stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
-    # pure_obs_len = length(which(!is.na(observations)))
-    # stderr=sqrt(GCV_*(pure_obs_len-dof)/pure_obs_len)
+    # stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
+    pure_obs_len = length(which(!is.na(observations)))
+    stderr=sqrt(GCV_*(pure_obs_len-dof)/pure_obs_len)
     test.ingredient=test.ingredient(beta = beta[,bestlambda], b_i = b_i[,bestlambda], covariates = official_covariates, 
                                     psi = psi, R0 = R0, R1= R1, stderr=stderr[bestlambda],
                                     nlocs=n, num_units = num_units, bestlambda = bestlambda)
@@ -318,9 +319,9 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   # Prepare return list
   reslist = NULL
   if(GCV == TRUE) {
-    stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
-    # pure_obs_len = length(which(!is.na(observations)))
-    # stderr=sqrt(GCV_*(pure_obs_len-dof)/pure_obs_len)
+    # stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
+    pure_obs_len = length(which(!is.na(observations)))
+    stderr=sqrt(GCV_*(pure_obs_len-dof)/pure_obs_len)
     reslist=list(fit.FEM.mixed = fit.FEM.mixed, PDEmisfit.FEM.mixed = PDEmisfit.FEM.mixed, 
       beta = beta, b_i = b_i, edf = dof, GCV = GCV_, stderr=stderr, bestlambda = bestlambda, bary.locations = bary.locations)
 
@@ -342,31 +343,36 @@ test.ingredient<-function(beta, b_i, covariates, psi, R0, R1, stderr, nlocs, num
   P = t(R1)%*%solve(R0)%*%R1
   W = covariates #already in the form of official design matrix
 
-  # step 0: need to exclude from b_i
+  # step 1: re-arrange b_i for user-friendly reason
   if (!is.null(b_i)) {
-    exclude_ind = seq(num_units, length(b_i), num_units)
-    official_b_i = b_i[-exclude_ind]
+    random_len = length(b_i)/num_units
+    temp_b_i = b_i[1:(random_len*(num_units-1))] #excluded the last unit
+    
+    
+    if (random_len == 1) { #if 1 random_effect
+      test_b_i = temp_b_i
+    } else { #more than 1 random_effect
+      test_b_i_ind=NULL
+      for (i in 1:(num_units-1)) {
+        test_b_i_ind=c(test_b_i_ind,seq(i,length(temp_b_i),random_len))
+      }
+      test_b_i= temp_b_i[test_b_i_ind]
+    }
   }
 
-  # step 1: find matrix S
+  # step 2: find matrix S
   Q=diag(nlocs*num_units)-(W%*%(solve(t(W)%*%W))%*%t(W))
   S=psi%*%(solve(t(psi)%*%Q%*%psi + bestlambda*P))%*%t(psi)%*%Q
   trS = sum(diag(S))
 
-  #step2: sigma^2 estimate
-  # f_hat=eval.FEM.mixed(mod2$fit.FEM,
-                     # locations = loc)[,minGCVind]
-  # f_hat=as.matrix(f_hat)
-  # z_hat = as.vector(f_hat + W%*%coeff)
-  # qq=dim(W)[2]
-  # est_sig2 = sum((z-z_hat)^2)/(nlocs*3-qq-trS)
+  #step3: sigma^2 estimate
   est_sig2 = stderr^2
 
-  # step3: Var of beta estimates
+  # step4: Var of beta estimates
   varcov = est_sig2*solve(t(W)%*%W) +
     est_sig2*solve(t(W)%*%W)%*%t(W)%*%S%*%t(S)%*%W%*%solve(t(W)%*%W)
 
-  # step4: change the name row and column
+  # step5: change the name row and column
   beta_name=c()
   for (i in 1:length(beta)) {
     temp=paste('beta_', as.character(i),sep="")
@@ -375,10 +381,10 @@ test.ingredient<-function(beta, b_i, covariates, psi, R0, R1, stderr, nlocs, num
   names(beta) = beta_name
 
   if (!is.null(b_i)) {
-    varcov_name = c(names(beta), names(official_b_i))
+    varcov_name = c(names(beta), names(test_b_i))
     rownames(varcov) = varcov_name
     colnames(varcov) = varcov_name
-    test.ingredient = list(coeff = c(beta, official_b_i), varcov = varcov) 
+    test.ingredient = list(coeff = c(beta, test_b_i), varcov = varcov) 
   } else {
     varcov_name = names(beta)
     rownames(varcov) = varcov_name
