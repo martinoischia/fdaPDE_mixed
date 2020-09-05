@@ -93,10 +93,10 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     }
   }
 
+  
+  # Start covariate conversion!
   orig_covariates = covariates
-  # Start of implementative covariate conversion
-  # find number of statistical units, m
-  num_units = dim(observations)[2]
+  num_units = dim(observations)[2] #number of statistical units, m
   
   ### Converting into big covariate X with both fixed effect and random effect
   m = num_units #num of statistical units
@@ -108,7 +108,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   #transform matrix data to vector data
   observations<-as.vector(observations)
 
-  # convert into implementative ver. (length: (q-p) + m*p)
+  # convert into implementative design matrix (length: q - p + m*p)
   matrixV = matrix(0, N, p*m)
 
   if (p<q && p!=0) { #random-effect as subset
@@ -132,11 +132,11 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   # else if (p==0) { #no random-effect (keep it as it is)
   #   covariates = as.matrix(covariates)
   # }
-  ### End of implementative covariate conversion
+  ### End of conversion
 
 
 
-  # Start of official covariate conversion (to be used in hypothesis testing)
+  # convert into official design matrix (length: q + (m-1)*p) (to be used in hypothesis testing)
   matrixV= matrix(0, N, p*(m-1))
 
   if ((p<q && p!=0) || (p==q)) { #random-effect as subset OR random-effect as full set
@@ -152,7 +152,7 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   } else if (p==0) { #no random-effect
     official_covariates = as.matrix(covariates)
   }
-  ### End of official covariate conversion
+  ### End of conversion
 
   ################## End checking parameters, sizes and conversion #############################
 
@@ -209,17 +209,17 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   bestlambda = bigsol[[4]]+1
 
   
-  # Start of coefficient conversion
-  matrixX = matrix(data=bigsol[[5]],nrow=ncol(covariates),ncol=length(lambda)) #implementative ver. (length: (q-p) + m*p)
+  # Start coefficient conversion
+  matrixcoeff = matrix(data=bigsol[[5]],nrow=ncol(covariates),ncol=length(lambda)) #implementative ver. (length: (q-p) + m*p)
 
   if (p != 0) { #exists random-effect
 
     # convert into official coeff (length: q + m*p)
     if (p<q && p!=0) { #random-effect as subset
-      betaPrime <- matrixX[1:(q-p),,drop=FALSE]
-      b_iPrime <- matrixX[-(1:(q-p)),,drop=FALSE] #split matrixX into 2 matrices
+      betaPrime <- matrixcoeff[1:(q-p),,drop=FALSE]
+      b_iPrime <- matrixcoeff[-(1:(q-p)),,drop=FALSE] #split matrixcoeff into 2 matrices
     } else if (p==q) { #random-effect as full set
-      b_iPrime <- matrixX
+      b_iPrime <- matrixcoeff
     }
     
     #convert fixed-effect
@@ -261,12 +261,12 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
     }
 
     rownames(b_i) = rname
-    # End of coefficient conversion
     
   } else { #if p==0, no random-effect
-    beta = matrixX
+    beta = matrixcoeff
     b_i = NULL
   }
+  # End of conversion
     
 
   # Save information of Tree Mesh
@@ -301,14 +301,12 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
 
   
 
-  # for hypothesis testing (coeff: before the conversion)
+  # for inference of parameters
   if(GCV == TRUE && TESTFLAG == TRUE) {
-    # for inference of parameters
     psi = bigsol[[13]]
     R0 = bigsol[[14]]
     R1 = bigsol[[15]]
     
-    # stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
     pure_obs_len = length(which(!is.na(observations)))
     stderr=sqrt(GCV_*(pure_obs_len-dof)/pure_obs_len)
     test.ingredient=test.ingredient(beta = beta[,bestlambda], b_i = b_i[,bestlambda], covariates = official_covariates, 
@@ -319,7 +317,6 @@ smooth.FEM.mixed<-function(locations = NULL, observations, FEMbasis, lambda,
   # Prepare return list
   reslist = NULL
   if(GCV == TRUE) {
-    # stderr=sqrt(GCV_*(length(observations)-dof)/length(observations))
     pure_obs_len = length(which(!is.na(observations)))
     stderr=sqrt(GCV_*(pure_obs_len-dof)/pure_obs_len)
     reslist=list(fit.FEM.mixed = fit.FEM.mixed, PDEmisfit.FEM.mixed = PDEmisfit.FEM.mixed, 
@@ -368,8 +365,8 @@ test.ingredient<-function(beta, b_i, covariates, psi, R0, R1, stderr, nlocs, num
   #step3: sigma^2 estimate
   est_sig2 = stderr^2
 
-  # step4: Var of beta estimates
-  varcov = est_sig2*solve(t(W)%*%W) +
+  # step4: Var of estimates
+  cov_mat = est_sig2*solve(t(W)%*%W) +
     est_sig2*solve(t(W)%*%W)%*%t(W)%*%S%*%t(S)%*%W%*%solve(t(W)%*%W)
 
   # step5: change the name row and column
@@ -381,15 +378,15 @@ test.ingredient<-function(beta, b_i, covariates, psi, R0, R1, stderr, nlocs, num
   names(beta) = beta_name
 
   if (!is.null(b_i)) {
-    varcov_name = c(names(beta), names(test_b_i))
-    rownames(varcov) = varcov_name
-    colnames(varcov) = varcov_name
-    test.ingredient = list(coeff = c(beta, test_b_i), varcov = varcov) 
+    cov_mat_name = c(names(beta), names(test_b_i))
+    rownames(cov_mat) = cov_mat_name
+    colnames(cov_mat) = cov_mat_name
+    test.ingredient = list(coeff = c(beta, test_b_i), cov_mat = cov_mat) 
   } else {
-    varcov_name = names(beta)
-    rownames(varcov) = varcov_name
-    colnames(varcov) = varcov_name
-    test.ingredient = list(coeff = beta, varcov = varcov) 
+    cov_mat_name = names(beta)
+    rownames(cov_mat) = cov_mat_name
+    colnames(cov_mat) = cov_mat_name
+    test.ingredient = list(coeff = beta, cov_mat = cov_mat) 
   }
 
      
