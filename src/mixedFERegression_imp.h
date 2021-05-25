@@ -685,11 +685,23 @@ void MixedFERegressionBase<InputHandler, IntegratorSpace, ORDER, IntegratorTime,
 		}
 	}
 }
-
+#include <fstream>
+void print_sparse_matrix (const SpMat & mat, std::ofstream & OS){
+	for (int k=0; k<mat.outerSize(); ++k)
+		for (Eigen::SparseMatrix<double>::InnerIterator it(mat,k); it; ++it)
+  		{
+    		OS << it.value() << " " << it.row() << " " << it.col() << "\n";
+  		}	
+}
 template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
 template<typename A>
 void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::apply(EOExpr<A> oper, const ForcingTerm & u)
 {
+	std::ofstream OSpsi ("D:/VM/Tesi/my/matrix_psi_kim");
+	std::ofstream OSnocov ("D:/VM/Tesi/my/matrix_nocov_kim");
+	std::ofstream OSR0 ("D:/VM/Tesi/my/matrix_R0_kim");
+	std::ofstream OSR1 ("D:/VM/Tesi/my/matrix_R1_kim");
+
 	UInt nnodes = N_*M_;
 	FiniteElement<IntegratorSpace, ORDER, mydim, ndim> fe;
 
@@ -697,11 +709,12 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 		setA();
 
 	setPsi(); //considers all space, spacemixed, spacetime cases
-
+print_sparse_matrix(psi_, OSpsi);
 	typedef EOExpr<Mass> ETMass; Mass EMass; ETMass mass(EMass);
 	Assembler::operKernel(oper, mesh_, fe, R1_);
 	Assembler::operKernel(mass, mesh_, fe, R0_);
-
+print_sparse_matrix(R0_, OSR0);
+print_sparse_matrix(R0_, OSR1);
 	if(this->isSpaceVarying)
 	{
         //u=ForcingTerm(VectorXr::Zero(nnodes));
@@ -754,7 +767,7 @@ void MixedFERegressionBase<InputHandler,IntegratorSpace,ORDER, IntegratorTime, S
 				NWblock+=lambdaT*Ptk_;
 
 			this->buildMatrixNoCov(NWblock, R1_lambda, R0_lambda);
-
+print_sparse_matrix(matrixNoCov_, OSnocov);
 			//! right-hand side correction for space varying PDEs
 			if(this->isSpaceVarying)
 			{
